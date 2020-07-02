@@ -1,0 +1,8 @@
+/build*
+
+# eclipse
+/.settings
+/.cproject
+/.project
+/.autotools
+/.pydevproject
