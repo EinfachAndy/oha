@@ -8,15 +8,9 @@
 
 #include <xxhash.h>
 
-#define XXHASH_SEED 0xc800c831bc63dff8
+#include "utils.h"
 
-#if SIZE_MAX == (18446744073709551615UL)
-#define SIZE_T_WIDTH 8
-#elif SIZE_MAX == (4294967295UL)
-#define SIZE_T_WIDTH 4
-#else
-#error "unsupported plattform"
-#endif
+#define XXHASH_SEED 0xc800c831bc63dff8
 
 #define MEMCPY_KEY(dest, src, n) memcpy(dest, src, n);
 #define MEMCMP_KEY(a, b, n) memcmp(a, b, n)
@@ -37,7 +31,7 @@ struct hash_table_key_bucket {
     uint32_t offset;
     uint32_t is_occupied;
     // key buffer is always aligned on 32 bit and 64 bit architectures
-    unsigned char key_buffer[];
+    uint8_t key_buffer[];
 };
 
 struct storage_info {
@@ -49,7 +43,7 @@ struct storage_info {
 };
 
 struct oha_lpht {
-    unsigned char * value_buckets;
+    uint8_t * value_buckets;
     struct hash_table_key_bucket * key_buckets;
     struct hash_table_key_bucket * last_key_bucket;
     struct hash_table_key_bucket * current_bucket_to_clear;
@@ -62,16 +56,6 @@ struct oha_lpht {
     uint_fast32_t max_elems;
     bool clear_mode_on;
 };
-
-static inline size_t add_alignment(size_t unaligned_size)
-{
-    return unaligned_size + (unaligned_size % SIZE_T_WIDTH);
-}
-
-static inline void * move_ptr_num_bytes(void * ptr, size_t num_bytes)
-{
-    return (((unsigned char *)ptr) + num_bytes);
-}
 
 // does not support overflow
 static void * get_next_value(struct oha_lpht * table, void * value)
@@ -196,9 +180,6 @@ static void probify(struct oha_lpht * table, struct hash_table_key_bucket * star
 
 void oha_lpht_destroy(struct oha_lpht * table)
 {
-    if (table == NULL) {
-        return;
-    }
     free(table);
 }
 

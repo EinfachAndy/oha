@@ -46,19 +46,18 @@ struct oha_key_value_pair oha_lpht_get_next_element_to_remove(struct oha_lpht * 
  *
  **********************************************************************************************************************/
 struct oha_bh_config {
-    size_t key_size;
     size_t value_size;
     uint32_t max_elems;
 };
 struct oha_bh;
 size_t oha_bh_calculate_size(const struct oha_bh_config * config);
 struct oha_bh * oha_bh_initialize(const struct oha_bh_config * config, void * memory);
-struct oha_bh * oha_bh_create(void);
+struct oha_bh * oha_bh_create(const struct oha_bh_config * config);
 void oha_bh_destroy(struct oha_bh * heap);
 int64_t oha_bh_find_min(struct oha_bh * heap);
-bool oha_bh_delete_min(struct oha_bh * heap);
-bool oha_bh_insert(struct oha_bh * heap, int64_t key);
-bool oha_bh_decrease_key(struct oha_bh *, int64_t key, int64_t new_value);
+void * oha_bh_delete_min(struct oha_bh * heap);
+void * oha_bh_insert(struct oha_bh * heap, int64_t key);
+int64_t oha_bh_decrease_key(struct oha_bh * heap, void * value, int64_t new_val);
 
 /**********************************************************************************************************************
  *  pht (prioritized hash table)

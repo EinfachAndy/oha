@@ -30,6 +30,9 @@ target_link_libraries(linear_hash_table_test_static ${LIBNAME}_static)
 add_unit_test(linear_hash_table_test_fix_key_8 linear_hash_table_test.c)
 target_link_libraries(linear_hash_table_test_fix_key_8 ${LIBNAME}_static_8)
 
+add_unit_test(binary_heap_test_shared binary_heap_test.c)
+target_link_libraries(binary_heap_test_shared ${LIBNAME})
+
 # benchmark
 add_executable(benchmark_shared benchmark.cpp)
 target_link_libraries(benchmark_shared ${LIBNAME})
