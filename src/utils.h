@@ -12,6 +12,9 @@
 #error "unsupported plattform"
 #endif
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 static inline size_t add_alignment(size_t unaligned_size)
 {
     return unaligned_size + (unaligned_size % SIZE_T_WIDTH);

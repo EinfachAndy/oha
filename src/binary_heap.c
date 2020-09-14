@@ -1,6 +1,7 @@
 #include "oha.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -148,7 +149,7 @@ void * oha_bh_delete_min(struct oha_bh * heap)
     }
     if (heap->elems == 1) {
         heap->elems--;
-        return heap->keys[0].value;
+        return heap->keys[0].value->value_data;
     }
 
     heap->elems--;
@@ -156,31 +157,91 @@ void * oha_bh_delete_min(struct oha_bh * heap)
     heapify(heap, 0);
 
     // Swapped root entry
-    return heap->keys[heap->elems].value;
+    return heap->keys[heap->elems].value->value_data;
 }
 
-int64_t oha_bh_decrease_key(struct oha_bh * heap, void * value, int64_t new_val)
+int64_t oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val)
 {
     if (heap == NULL || value == NULL) {
         return 0;
     }
 
     struct oha_bh_value_bucket * value_bucket =
-        (struct oha_bh_value_bucket *)((uint8_t *)value) - offsetof(struct oha_bh_value_bucket, value_data);
-    assert(value_bucket->value_data == value);
+        (struct oha_bh_value_bucket *)((uint8_t *)value - offsetof(struct oha_bh_value_bucket, value_data));
+    assert(value_bucket->key->value == value_bucket);
 
+    enum mode {
+        UNCHANGED_KEY,
+        DECREASE_KEY,
+        INCREASE_KEY,
+    } mode;
     struct oha_bh_key_bucket * key = value_bucket->key;
-    if (key->key <= new_val) {
-        // nothing todo
-        return key->key;
+    if (new_val < key->key) {
+        mode = DECREASE_KEY;
+    } else if (new_val == key->key) {
+        mode = UNCHANGED_KEY;
+    } else {
+        mode = INCREASE_KEY;
     }
 
     key->key = new_val;
-    uint_fast32_t i = (key - heap->keys) / sizeof(struct oha_bh_key_bucket);
+    uint_fast32_t index = key - heap->keys;
 
-    while (i != 0 && heap->keys[parent(i)].key > heap->keys[i].key) {
-        swap_keys(&heap->keys[i], &heap->keys[parent(i)]);
-        i = parent(i);
+    switch (mode) {
+        case UNCHANGED_KEY:
+            // nothing todo
+            break;
+        case DECREASE_KEY: {
+            // swap to top
+            while (index > 0 && heap->keys[parent(index)].key > heap->keys[index].key) {
+                swap_keys(&heap->keys[index], &heap->keys[parent(index)]);
+                index = parent(index);
+            }
+            break;
+        }
+        case INCREASE_KEY: {
+            // swap to bottom
+            while (1) {
+                // check for right side
+                int64_t rigth_key = INT64_MIN;
+                int64_t left_key = INT64_MIN;
+                if (right(index) < heap->elems && heap->keys[right(index)].key < heap->keys[index].key) {
+                    rigth_key = heap->keys[right(index)].key;
+                }
+                // check for left side
+                if (left(index) < heap->elems && heap->keys[left(index)].key < heap->keys[index].key) {
+                    left_key = heap->keys[left(index)].key;
+                }
+
+                // no element to swap
+                if (rigth_key == INT64_MIN && left_key == INT64_MIN) {
+                    break;
+                }
+
+                // check for smallest element which is not INT64_MIN
+                bool take_left;
+                if (rigth_key == INT64_MIN) {
+                    take_left = true;
+                } else if (left_key == INT64_MIN) {
+                    take_left = false;
+                } else if (left_key < rigth_key) {
+                    take_left = true;
+                } else {
+                    take_left = false;
+                }
+
+                // swap
+                if (take_left) {
+                    swap_keys(&heap->keys[index], &heap->keys[left(index)]);
+                    index = left(index);
+                } else {
+                    swap_keys(&heap->keys[index], &heap->keys[right(index)]);
+                    index = left(index);
+                }
+            }
+            break;
+        }
     }
+
     return new_val;
 }

@@ -57,7 +57,7 @@ void oha_bh_destroy(struct oha_bh * heap);
 int64_t oha_bh_find_min(struct oha_bh * heap);
 void * oha_bh_delete_min(struct oha_bh * heap);
 void * oha_bh_insert(struct oha_bh * heap, int64_t key);
-int64_t oha_bh_decrease_key(struct oha_bh * heap, void * value, int64_t new_val);
+int64_t oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val);
 
 /**********************************************************************************************************************
  *  pht (prioritized hash table)
