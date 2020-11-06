@@ -7,8 +7,6 @@
 
 #include "utils.h"
 
-#define CMP(a, b) ((a) >= (b))
-
 struct value_bucket {
     struct key_bucket * key;
     uint8_t value_buffer[];
