@@ -35,6 +35,7 @@ struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * config);
 void oha_lpht_destroy(struct oha_lpht * table);
 void * oha_lpht_look_up(struct oha_lpht * table, const void * key);
 void * oha_lpht_insert(struct oha_lpht * table, const void * key);
+void * oha_lpht_get_key_from_value(const void * value);
 void * oha_lpht_remove(struct oha_lpht * table, const void * key);
 void oha_lpht_clear(struct oha_lpht * table);
 struct oha_key_value_pair oha_lpht_get_next_element_to_remove(struct oha_lpht * table);
