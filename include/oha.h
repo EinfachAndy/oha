@@ -29,6 +29,12 @@ struct oha_lpht_config {
     uint32_t max_elems;
 };
 
+struct oha_lpht_status {
+    uint32_t max_elems;
+    uint32_t elems_in_use;
+    size_t size_in_bytes;
+};
+
 size_t oha_lpht_calculate_size(const struct oha_lpht_config * config);
 struct oha_lpht * oha_lpht_initialize(const struct oha_lpht_config * config, void * memory);
 struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * config);
@@ -37,6 +43,7 @@ void * oha_lpht_look_up(struct oha_lpht * table, const void * key);
 void * oha_lpht_insert(struct oha_lpht * table, const void * key);
 void * oha_lpht_get_key_from_value(const void * value);
 void * oha_lpht_remove(struct oha_lpht * table, const void * key);
+bool oha_lpht_get_status(struct oha_lpht * table, struct oha_lpht_status * status);
 void oha_lpht_clear(struct oha_lpht * table);
 struct oha_key_value_pair oha_lpht_get_next_element_to_remove(struct oha_lpht * table);
 

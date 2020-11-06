@@ -375,3 +375,15 @@ void * oha_lpht_remove(struct oha_lpht * table, const void * key)
     table->elems--;
     return value;
 }
+
+bool oha_lpht_get_status(struct oha_lpht * table, struct oha_lpht_status * status)
+{
+    if (table == NULL || status == NULL) {
+        return false;
+    }
+
+    status->max_elems = table->max_elems;
+    status->elems_in_use = table->elems;
+    status->size_in_bytes = table->storage.value_size;
+    return true;
+}
