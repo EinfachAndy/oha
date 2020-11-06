@@ -66,12 +66,22 @@ void test_insert_look_up()
             uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
             TEST_ASSERT_NULL(value_lool_up);
         }
+
+        struct oha_lpht_status status;
+        TEST_ASSERT_TRUE(oha_lpht_get_status(table, &status));
+        TEST_ASSERT_EQUAL_UINT64(i, status.elems_in_use);
+        TEST_ASSERT_EQUAL_UINT64(config.max_elems, status.max_elems);
+
         uint64_t * value_insert = oha_lpht_insert(table, &i);
         TEST_ASSERT_NOT_NULL(value_insert);
         *value_insert = i;
         uint64_t * value_lool_up = oha_lpht_look_up(table, &i);
         TEST_ASSERT_EQUAL_PTR(value_insert, value_lool_up);
         TEST_ASSERT_EQUAL_UINT64(*value_lool_up, i);
+
+        TEST_ASSERT_TRUE(oha_lpht_get_status(table, &status));
+        TEST_ASSERT_EQUAL_UINT64(i + 1, status.elems_in_use);
+        TEST_ASSERT_EQUAL_UINT64(config.max_elems, status.max_elems);
     }
 
     // Table is full
@@ -149,7 +159,7 @@ void test_clear_remove()
     for (uint64_t i = 0; i < config.max_elems; i++) {
         struct oha_key_value_pair pair = oha_lpht_get_next_element_to_remove(table);
         TEST_ASSERT_NOT_NULL(pair.value);
-        TEST_ASSERT(*(uint64_t*)pair.value < 100);
+        TEST_ASSERT(*(uint64_t *)pair.value < 100);
     }
 
     TEST_ASSERT_NULL(oha_lpht_get_next_element_to_remove(table).value);
