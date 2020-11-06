@@ -25,15 +25,21 @@
 #define MEMCMP_KEY(a, b, n) memcmp(a, b, n)
 #endif
 
+#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
 struct key_bucket;
-
 struct value_bucket {
     struct key_bucket * key;
     uint8_t value_buffer[];
 };
+#define VALUE_BUCKET_TYPE struct value_bucket
+#define TABLE_VALUE_BUCKET_SIZE sizeof(struct value_bucket)
+#else
+#define VALUE_BUCKET_TYPE void
+#define TABLE_VALUE_BUCKET_SIZE 0
+#endif
 
 struct key_bucket {
-    struct value_bucket * value;
+    VALUE_BUCKET_TYPE * value;
     uint32_t offset;
     uint32_t is_occupied; // only one bit in usage, could be extend for future states
     // key buffer is always aligned on 32 bit and 64 bit architectures
@@ -49,7 +55,7 @@ struct storage_info {
 };
 
 struct oha_lpht {
-    struct value_bucket * value_buckets;
+    VALUE_BUCKET_TYPE * value_buckets;
     struct key_bucket * key_buckets;
     struct key_bucket * last_key_bucket;
     struct key_bucket * current_bucket_to_clear;
@@ -63,8 +69,17 @@ struct oha_lpht {
     bool clear_mode_on;
 };
 
+static inline void * get_value(struct key_bucket * bucket)
+{
+#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
+    return bucket->value->value_buffer;
+#else
+    return bucket->value;
+#endif
+}
+
 // does not support overflow
-static void * get_next_value(struct oha_lpht * table, struct value_bucket * value)
+static void * get_next_value(struct oha_lpht * table, VALUE_BUCKET_TYPE * value)
 {
     return move_ptr_num_bytes(value, table->storage.value_size);
 }
@@ -98,9 +113,11 @@ static struct key_bucket * get_next_bucket(struct oha_lpht * table, struct key_b
 
 static void swap_bucket_values(struct key_bucket * restrict a, struct key_bucket * restrict b)
 {
+#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
     a->value->key = b;
     b->value->key = a;
-    struct value_bucket * tmp = a->value;
+#endif
+    VALUE_BUCKET_TYPE * tmp = a->value;
     a->value = b->value;
     b->value = tmp;
 }
@@ -127,7 +144,7 @@ static int get_storage_values(const struct oha_lpht_config * config, struct stor
 
     // TODO add overflow checks
     values->max_indicies = ceil((1 / config->load_factor) * config->max_elems) + 1;
-    values->value_size = sizeof(struct value_bucket) + add_alignment(config->value_size);
+    values->value_size = TABLE_VALUE_BUCKET_SIZE + add_alignment(config->value_size);
     values->key_bucket_size = add_alignment(sizeof(struct key_bucket) + values->key_size);
     values->hash_table_size = sizeof(struct oha_lpht)                          // table space
                               + values->key_bucket_size * values->max_indicies // keys
@@ -151,10 +168,12 @@ static struct oha_lpht * init_table_value(const struct oha_lpht_config * config,
 
     // connect hash buckets and value buckets
     struct key_bucket * current_key_bucket = table->key_buckets;
-    struct value_bucket * current_value_bucket = table->value_buckets;
+    VALUE_BUCKET_TYPE * current_value_bucket = table->value_buckets;
     for (size_t i = 0; i < table->storage.max_indicies; i++) {
         current_key_bucket->value = current_value_bucket;
+#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
         current_value_bucket->key = current_key_bucket;
+#endif
         current_key_bucket = get_next_bucket(table, current_key_bucket);
         current_value_bucket = get_next_value(table, current_value_bucket);
     }
@@ -238,7 +257,7 @@ void * oha_lpht_look_up(struct oha_lpht * table, const void * key)
     while (bucket->is_occupied) {
         // circle + length check
         if (MEMCMP_KEY(bucket->key_buffer, key, table->storage.key_size) == 0) {
-            return bucket->value->value_buffer;
+            return get_value(bucket);
         }
         bucket = get_next_bucket(table, bucket);
     }
@@ -262,7 +281,7 @@ void * oha_lpht_insert(struct oha_lpht * table, const void * key)
     while (bucket->is_occupied) {
         if (MEMCMP_KEY(bucket->key_buffer, key, table->storage.key_size) == 0) {
             // already inserted
-            return bucket->value->value_buffer;
+            return get_value(bucket);
         }
         bucket = get_next_bucket(table, bucket);
         offset++;
@@ -274,11 +293,12 @@ void * oha_lpht_insert(struct oha_lpht * table, const void * key)
     bucket->is_occupied = 1;
 
     table->elems++;
-    return bucket->value->value_buffer;
+    return get_value(bucket);
 }
 
 void * oha_lpht_get_key_from_value(const void * value)
 {
+#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
     if (value == NULL) {
         return NULL;
     }
@@ -286,6 +306,10 @@ void * oha_lpht_get_key_from_value(const void * value)
         (struct value_bucket *)((uint8_t *)value - offsetof(struct value_bucket, value_buffer));
     assert(value_bucket->key->value == value_bucket);
     return value_bucket->key;
+#else
+    (void)value;
+    return NULL;
+#endif
 }
 
 void oha_lpht_clear(struct oha_lpht * table)
@@ -309,7 +333,7 @@ struct oha_key_value_pair oha_lpht_get_next_element_to_remove(struct oha_lpht * 
 
     while (table->current_bucket_to_clear <= table->last_key_bucket) {
         if (table->current_bucket_to_clear->is_occupied) {
-            pair.value = table->current_bucket_to_clear->value->value_buffer;
+            pair.value = get_value(table->current_bucket_to_clear);
             pair.key = table->current_bucket_to_clear->key_buffer;
             stop = true;
         }
@@ -357,7 +381,7 @@ void * oha_lpht_remove(struct oha_lpht * table, const void * key)
         current = get_next_bucket(table, current);
     } while (current->is_occupied);
 
-    void * value = bucket_to_remove->value->value_buffer;
+    void * value = get_value(bucket_to_remove);
     if (collision != NULL) {
         // copy collision to the element to remove
         swap_bucket_values(bucket_to_remove, collision);

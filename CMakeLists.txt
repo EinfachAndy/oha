@@ -10,6 +10,8 @@ if(ASAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 endif()
 
+option(WITH_KEY_FROM_VALUE_FUNC "enabled the function: 'oha_lpht_get_key_from_value()'" OFF)
+
 set(LIBNAME "oha")
 set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic)
 
