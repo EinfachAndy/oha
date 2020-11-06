@@ -9,22 +9,22 @@
 
 #define CMP(a, b) ((a) >= (b))
 
-struct oha_bh_value_bucket {
-    struct oha_bh_key_bucket * key;
-    uint8_t value_data[];
+struct value_bucket {
+    struct key_bucket * key;
+    uint8_t value_buffer[];
 };
 
-struct oha_bh_key_bucket {
+struct key_bucket {
     int64_t key;
-    struct oha_bh_value_bucket * value;
+    struct value_bucket * value;
 };
 
 struct oha_bh {
     size_t value_size;
     uint_fast32_t max_elems;
     uint_fast32_t elems;
-    struct oha_bh_value_bucket * values;
-    struct oha_bh_key_bucket * keys;
+    struct value_bucket * values;
+    struct key_bucket * keys;
 };
 
 static inline uint_fast32_t parent(uint_fast32_t i)
@@ -42,11 +42,11 @@ static inline uint_fast32_t right(uint_fast32_t i)
     return (2 * i + 2);
 }
 
-static inline void swap_keys(struct oha_bh_key_bucket * restrict a, struct oha_bh_key_bucket * restrict b)
+static inline void swap_keys(struct key_bucket * restrict a, struct key_bucket * restrict b)
 {
     a->value->key = b;
     b->value->key = a;
-    struct oha_bh_key_bucket tmp_a = *a;
+    struct key_bucket tmp_a = *a;
     *a = *b;
     *b = tmp_a;
 }
@@ -83,13 +83,13 @@ struct oha_bh * oha_bh_create(const struct oha_bh_config * config)
         return NULL;
     }
 
-    heap->keys = calloc(config->max_elems, sizeof(struct oha_bh_key_bucket));
+    heap->keys = calloc(config->max_elems, sizeof(struct key_bucket));
     if (heap->keys == NULL) {
         oha_bh_destroy(heap);
         return NULL;
     }
 
-    heap->value_size = sizeof(struct oha_bh_value_bucket) + config->value_size;
+    heap->value_size = sizeof(struct value_bucket) + config->value_size;
     heap->values = calloc(config->max_elems, heap->value_size);
     if (heap->values == NULL) {
         oha_bh_destroy(heap);
@@ -98,7 +98,7 @@ struct oha_bh * oha_bh_create(const struct oha_bh_config * config)
     heap->max_elems = config->max_elems;
 
     // connect keys and values
-    struct oha_bh_value_bucket * tmp_value = heap->values;
+    struct value_bucket * tmp_value = heap->values;
     for (uint_fast32_t i = 0; i < heap->max_elems; i++) {
         heap->keys[i].value = tmp_value;
         tmp_value->key = &heap->keys[i];
@@ -128,7 +128,7 @@ void * oha_bh_insert(struct oha_bh * heap, int64_t key)
     }
 
     heap->elems++;
-    return heap->keys[i].value->value_data;
+    return heap->keys[i].value->value_buffer;
 }
 
 int64_t oha_bh_find_min(struct oha_bh * heap)
@@ -149,7 +149,7 @@ void * oha_bh_delete_min(struct oha_bh * heap)
     }
     if (heap->elems == 1) {
         heap->elems--;
-        return heap->keys[0].value->value_data;
+        return heap->keys[0].value->value_buffer;
     }
 
     heap->elems--;
@@ -157,7 +157,7 @@ void * oha_bh_delete_min(struct oha_bh * heap)
     heapify(heap, 0);
 
     // Swapped root entry
-    return heap->keys[heap->elems].value->value_data;
+    return heap->keys[heap->elems].value->value_buffer;
 }
 
 int64_t oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val)
@@ -166,8 +166,8 @@ int64_t oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val)
         return 0;
     }
 
-    struct oha_bh_value_bucket * value_bucket =
-        (struct oha_bh_value_bucket *)((uint8_t *)value - offsetof(struct oha_bh_value_bucket, value_data));
+    struct value_bucket * value_bucket =
+        (struct value_bucket *)((uint8_t *)value - offsetof(struct value_bucket, value_buffer));
     assert(value_bucket->key->value == value_bucket);
 
     enum mode {
@@ -175,7 +175,7 @@ int64_t oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val)
         DECREASE_KEY,
         INCREASE_KEY,
     } mode;
-    struct oha_bh_key_bucket * key = value_bucket->key;
+    struct key_bucket * key = value_bucket->key;
     if (new_val < key->key) {
         mode = DECREASE_KEY;
     } else if (new_val == key->key) {
