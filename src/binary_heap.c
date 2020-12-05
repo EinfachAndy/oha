@@ -18,8 +18,8 @@ struct key_bucket {
 };
 
 struct oha_bh {
+    struct oha_bh_config config;
     size_t value_size;
-    uint_fast32_t max_elems;
     uint_fast32_t elems;
     struct value_bucket * values;
     struct key_bucket * keys;
@@ -66,9 +66,13 @@ static void heapify(struct oha_bh * heap, uint_fast32_t i)
 
 void oha_bh_destroy(struct oha_bh * heap)
 {
-    free(heap->keys);
-    free(heap->values);
-    free(heap);
+    if (heap == NULL) {
+        return;
+    }
+    const struct oha_memory_fp * memory = &heap->config.memory;
+    oha_free(memory, heap->keys);
+    oha_free(memory, heap->values);
+    oha_free(memory, heap);
 }
 
 struct oha_bh * oha_bh_create(const struct oha_bh_config * config)
@@ -76,28 +80,30 @@ struct oha_bh * oha_bh_create(const struct oha_bh_config * config)
     if (config == NULL) {
         return NULL;
     }
-    struct oha_bh * heap = calloc(1, sizeof(struct oha_bh));
+    const struct oha_memory_fp * memory = &config->memory;
+
+    struct oha_bh * heap = oha_calloc(memory, sizeof(struct oha_bh));
     if (heap == NULL) {
         return NULL;
     }
+    heap->config = *config;
 
-    heap->keys = calloc(config->max_elems, sizeof(struct key_bucket));
+    heap->keys = oha_calloc(memory, config->max_elems * sizeof(struct key_bucket));
     if (heap->keys == NULL) {
         oha_bh_destroy(heap);
         return NULL;
     }
 
     heap->value_size = sizeof(struct value_bucket) + config->value_size;
-    heap->values = calloc(config->max_elems, heap->value_size);
+    heap->values = oha_calloc(memory, config->max_elems * heap->value_size);
     if (heap->values == NULL) {
         oha_bh_destroy(heap);
         return NULL;
     }
-    heap->max_elems = config->max_elems;
 
     // connect keys and values
     struct value_bucket * tmp_value = heap->values;
-    for (uint_fast32_t i = 0; i < heap->max_elems; i++) {
+    for (uint_fast32_t i = 0; i < config->max_elems; i++) {
         heap->keys[i].value = tmp_value;
         tmp_value->key = &heap->keys[i];
         tmp_value = move_ptr_num_bytes(tmp_value, heap->value_size);
@@ -111,7 +117,7 @@ void * oha_bh_insert(struct oha_bh * heap, int64_t key)
     if (heap == NULL) {
         return NULL;
     }
-    if (heap->elems >= heap->max_elems) {
+    if (heap->elems >= heap->config.max_elems) {
         return NULL;
     }
 

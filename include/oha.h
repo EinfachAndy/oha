@@ -68,6 +68,7 @@ struct oha_bh_config {
 	struct oha_memory_fp memory;
     size_t value_size;
     uint32_t max_elems;
+    bool resizable;
 };
 struct oha_bh;
 struct oha_bh * oha_bh_create(const struct oha_bh_config * config);
