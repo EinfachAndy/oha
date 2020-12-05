@@ -78,41 +78,6 @@ static inline void * get_value(struct key_bucket * bucket)
 #endif
 }
 
-static inline void i_free(const struct oha_lpht_config * config, void * ptr)
-{
-    if (config->free != NULL) {
-        config->free(ptr, config->alloc_user_ptr);
-
-    } else {
-        free(ptr);
-    }
-}
-
-static inline void * i_calloc(const struct oha_lpht_config * config, size_t size)
-{
-    assert(config);
-    void * ptr;
-    if (config->malloc != NULL) {
-        ptr = config->malloc(size, config->alloc_user_ptr);
-        if (ptr != NULL) {
-            memset(ptr, 0, size);
-        }
-    } else {
-        ptr = calloc(1, size);
-    }
-    return ptr;
-}
-
-static inline void * i_realloc(const struct oha_lpht_config * config, void * ptr, size_t size)
-{
-    assert(config);
-    if (config->realloc != NULL) {
-        return config->realloc(ptr, size, config->alloc_user_ptr);
-    } else {
-        return realloc(ptr, size);
-    }
-}
-
 // does not support overflow
 static void * get_next_value(struct oha_lpht * table, VALUE_BUCKET_TYPE * value)
 {
@@ -191,13 +156,14 @@ static struct oha_lpht * init_table_value(const struct oha_lpht_config * config,
                                           struct oha_lpht * table)
 {
     table->storage = *storage;
-    table->key_buckets = i_calloc(config, storage->hash_table_size_keys);
+    const struct oha_memory_fp * memory = &table->config.memory;
+    table->key_buckets = oha_calloc(memory, storage->hash_table_size_keys);
     if (table->key_buckets == NULL) {
         oha_lpht_destroy(table);
         return NULL;
     }
 
-    table->value_buckets = i_calloc(config, storage->hash_table_size_values);
+    table->value_buckets = oha_malloc(memory, storage->hash_table_size_values);
     if (table->value_buckets == NULL) {
         oha_lpht_destroy(table);
         return NULL;
@@ -233,6 +199,7 @@ static void probify(struct oha_lpht * table, struct key_bucket * start_bucket, u
         i++;
         bucket = get_next_bucket(table, bucket);
         if (bucket->offset >= offset || bucket->offset >= i) {
+            // TODO mark bucket as dirty and do not probify
             swap_bucket_values(start_bucket, bucket);
             MEMCPY_KEY(start_bucket->key_buffer, bucket->key_buffer, table->config.key_size);
             start_bucket->offset = bucket->offset - i;
@@ -283,8 +250,8 @@ static bool resize_table(struct oha_lpht * table)
     }
 
     // destroy old table buffers
-    i_free(&table->config, table->key_buckets);
-    i_free(&table->config, table->value_buckets);
+    oha_free(&table->config.memory, table->key_buckets);
+    oha_free(&table->config.memory, table->value_buckets);
 
     // copy new table
     *table = tmp_table;
@@ -292,8 +259,8 @@ static bool resize_table(struct oha_lpht * table)
     return true;
 
 clean_up_and_error:
-    i_free(&tmp_table.config, tmp_table.key_buckets);
-    i_free(&tmp_table.config, tmp_table.value_buckets);
+    oha_free(&tmp_table.config.memory, tmp_table.key_buckets);
+    oha_free(&tmp_table.config.memory, tmp_table.value_buckets);
     return false;
 }
 
@@ -306,16 +273,16 @@ void oha_lpht_destroy(struct oha_lpht * table)
     if (table == NULL) {
         return;
     }
-    const struct oha_lpht_config * config = &table->config;
+    const struct oha_memory_fp * memory = &table->config.memory;
 
-    i_free(config, table->key_buckets);
-    i_free(config, table->value_buckets);
-    i_free(config, table);
+    oha_free(memory, table->key_buckets);
+    oha_free(memory, table->value_buckets);
+    oha_free(memory, table);
 }
 
 struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * config)
 {
-    struct oha_lpht * table = i_calloc(config, sizeof(struct oha_lpht));
+    struct oha_lpht * table = oha_calloc(&config->memory, sizeof(struct oha_lpht));
     if (table == NULL) {
         return NULL;
     }
@@ -323,7 +290,7 @@ struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * config)
     table->config = *config;
     struct storage_info storage;
     if (!calculate_storage_values(&table->config, &storage)) {
-        i_free(config, table);
+        oha_free(&config->memory, table);
         return NULL;
     }
 

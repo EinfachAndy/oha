@@ -18,6 +18,13 @@ typedef void * (*oha_malloc_fp)(size_t size, void * user_ptr);
 typedef void * (*oha_realloc_fp)(void * ptr, size_t size, void * user_ptr);
 typedef void (*oha_free_fp)(void * ptr, void * user_ptr);
 
+struct oha_memory_fp {
+    oha_malloc_fp malloc;
+    oha_realloc_fp realloc;
+    oha_free_fp free;
+    void * alloc_user_ptr;
+};
+
 /**********************************************************************************************************************
  *  linear probing hash table (lpht)
  *
@@ -28,10 +35,7 @@ struct oha_lpht;
 
 struct oha_lpht_config {
     double load_factor;
-    oha_malloc_fp malloc;
-    oha_realloc_fp realloc;
-    oha_free_fp free;
-    void * alloc_user_ptr;
+    struct oha_memory_fp memory;
     size_t key_size;
     size_t value_size;
     uint32_t max_elems;
@@ -61,12 +65,11 @@ bool oha_lpht_get_next_element_to_remove(struct oha_lpht * table, struct oha_key
  *
  **********************************************************************************************************************/
 struct oha_bh_config {
+	struct oha_memory_fp memory;
     size_t value_size;
     uint32_t max_elems;
 };
 struct oha_bh;
-size_t oha_bh_calculate_size(const struct oha_bh_config * config);
-struct oha_bh * oha_bh_initialize(const struct oha_bh_config * config, void * memory);
 struct oha_bh * oha_bh_create(const struct oha_bh_config * config);
 void oha_bh_destroy(struct oha_bh * heap);
 int64_t oha_bh_find_min(struct oha_bh * heap);
