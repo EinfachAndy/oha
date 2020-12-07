@@ -75,4 +75,14 @@ static inline void * oha_realloc(const struct oha_memory_fp * memory, void * ptr
     }
 }
 
+
+/**
+* creates a modulo without division
+*  - modulo could takes up to 20 cycles
+*  - multiplication takes about 3 cycles
+*/
+static inline uint32_t oha_map_range_u32(uint32_t word, uint32_t p) {
+	return (uint32_t)(((uint64_t)word * (uint64_t)p) >> 32);
+}
+
 #endif

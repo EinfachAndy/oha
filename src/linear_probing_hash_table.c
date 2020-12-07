@@ -96,8 +96,7 @@ static uint64_t hash_key(struct oha_lpht * table, const void * key)
 
 static struct key_bucket * get_start_bucket(struct oha_lpht * table, uint64_t hash)
 {
-    // TODO use shift if max_indicies is pow of 2
-    size_t index = hash % table->storage.max_indicies;
+    size_t index = oha_map_range_u32(hash, table->storage.max_indicies);
     return move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * index);
 }
 
