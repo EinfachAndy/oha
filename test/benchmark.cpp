@@ -20,13 +20,16 @@ enum command get_cmd(char * line, size_t length, uint64_t & key)
     if (length > 0) {
         switch (line[0]) {
             case '+':
-                key = atoll(&line[1]);
+                key = *(uint32_t *)(&line[1]);
+                // std::cout << "+" << key << std::endl;
                 return INSERT;
             case '-':
-                key = atoll(&line[1]);
+                key = *(uint32_t *)(&line[1]);
+                // std::cout << "-" << key << std::endl;
                 return REMOVE;
             case '?':
-                key = atoll(&line[1]);
+                key = *(uint32_t *)(&line[1]);
+                // std::cout << "?" << key << std::endl;
                 return LOOKUP;
             default:
                 return INVALID;
@@ -53,7 +56,7 @@ int main(int argc, char * argv[])
     }
     unordered_map<uint64_t, struct value> * umap = NULL;
     struct oha_lpht * table = NULL;
-    char * line_buf = NULL;
+    char line_buf[5];
     size_t line_buf_size = 0;
     int line_count = 0;
     ssize_t line_size;
@@ -67,7 +70,7 @@ int main(int argc, char * argv[])
     int mode = atoi(argv[2]);
 
     const struct oha_lpht_config config = {
-        .load_factor = 0.7,
+        .load_factor = 0.5,
         .key_size = sizeof(uint64_t),
         .value_size = sizeof(struct value),
         .max_elems = MAX_ELEMENTS,
@@ -88,14 +91,14 @@ int main(int argc, char * argv[])
     }
 
     /* Get initial line */
-    line_size = getline(&line_buf, &line_buf_size, fp);
+    line_size = fread(line_buf, 5, 1, fp);
 
     uint64_t key;
     struct value * value;
     uint64_t inserts = 0;
     uint64_t lookups = 0;
     uint64_t removes = 0;
-    while (line_size >= 0) {
+    while (line_size > 0) {
         line_count++;
 
         enum command cmd = get_cmd(line_buf, line_size, key);
@@ -146,17 +149,14 @@ int main(int argc, char * argv[])
                 removes++;
                 break;
         }
-        /* Get the next line */
-        line_size = getline(&line_buf, &line_buf_size, fp);
+        /* Get the next item */
+        line_size = fread(line_buf, 5, 1, fp);
     }
 
     printf("test:\n -inserts:\t%lu\n -look ups:\t%lu\n -removes:\t%lu\n", inserts, lookups, removes);
 EXIT:
     delete umap;
     oha_lpht_destroy(table);
-    /* Free the allocated line buffer */
-    free(line_buf);
-    line_buf = NULL;
 
     /* Close the file now that we are done with it */
     fclose(fp);
