@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <xxhash.h>
+#include "xxHash/xxh3.h"
 
 #include "utils.h"
 
@@ -88,9 +88,9 @@ static uint64_t hash_key(struct oha_lpht * table, const void * key)
 {
 #ifdef OHA_FIX_KEY_SIZE_IN_BYTES
     (void)table;
-    return XXH64(key, OHA_FIX_KEY_SIZE_IN_BYTES, XXHASH_SEED);
+    return XXH3_64bits_withSeed(key, OHA_FIX_KEY_SIZE_IN_BYTES, XXHASH_SEED);
 #else
-    return XXH64(key, table->config.key_size, XXHASH_SEED);
+    return XXH3_64bits_withSeed(key, table->config.key_size, XXHASH_SEED);
 #endif
 }
 

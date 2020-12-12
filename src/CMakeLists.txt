@@ -1,7 +1,3 @@
-# import xxhash project
-add_definitions(-DXXH_INLINE_ALL)
-add_subdirectory(xxHash/cmake_unofficial)
-
 set(SOURCE_FILES linear_probing_hash_table.c binary_heap.c prioritized_hash_table.c)
 
 if(WITH_KEY_FROM_VALUE_FUNC)
@@ -12,7 +8,7 @@ endif()
 if(NOT DEFINED OHA_DISABLE_BUILD_SHARED_LIB)
     add_library(${LIBNAME} SHARED ${SOURCE_FILES})
     target_compile_options(${LIBNAME} PRIVATE ${PROJECT_COMPILE_OPTIONS} -fPIC)
-    target_link_libraries(${LIBNAME} PRIVATE oha_xxhash m)
+    target_link_libraries(${LIBNAME} PRIVATE m)
     target_include_directories(${LIBNAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
     set(VERSION_MAJOR 0)
     set(VERSION_MINOR 0)
@@ -29,7 +25,7 @@ endif()
 # static lib
 add_library(${LIBNAME}_static STATIC ${SOURCE_FILES})
 target_compile_options(${LIBNAME}_static PRIVATE ${PROJECT_COMPILE_OPTIONS})
-target_link_libraries(${LIBNAME}_static PRIVATE oha_xxhash m)
+target_link_libraries(${LIBNAME}_static PRIVATE m)
 target_include_directories(${LIBNAME}_static PUBLIC ${PROJECT_SOURCE_DIR}/include)
 install(TARGETS ${LIBNAME}_static
         ARCHIVE
@@ -39,7 +35,7 @@ install(TARGETS ${LIBNAME}_static
 # static lib with fixed key size of 8 byte
 add_library(${LIBNAME}_static_8 STATIC ${SOURCE_FILES})
 target_compile_options(${LIBNAME}_static_8 PRIVATE ${PROJECT_COMPILE_OPTIONS})
-target_link_libraries(${LIBNAME}_static_8 PRIVATE oha_xxhash  m)
+target_link_libraries(${LIBNAME}_static_8 PRIVATE  m)
 target_include_directories(${LIBNAME}_static_8 PUBLIC ${PROJECT_SOURCE_DIR}/include)
 install(TARGETS ${LIBNAME}_static_8
         ARCHIVE
