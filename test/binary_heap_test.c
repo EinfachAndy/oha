@@ -41,10 +41,9 @@ static int64_t * get_random_array(size_t num_elems, unsigned int bound)
 
 void test_create_destroy()
 {
-    const struct oha_bh_config config = {
-        .value_size = 0,
-        .max_elems = 100,
-    };
+    struct oha_bh_config config = {0};
+    config.value_size = 0;
+    config.max_elems = 100;
 
     struct oha_bh * heap = oha_bh_create(&config);
     oha_bh_destroy(heap);
@@ -53,10 +52,9 @@ void test_create_destroy()
 void test_insert_delete_min()
 {
     const size_t array_size = 100 * 1000;
-    const struct oha_bh_config config = {
-        .value_size = 0,
-        .max_elems = array_size,
-    };
+    struct oha_bh_config config = {0};
+    config.value_size = 0;
+    config.max_elems = array_size;
 
     struct oha_bh * heap = oha_bh_create(&config);
     int64_t * big_rand_array = get_random_array(array_size, 100 * 1000 * 1000);
@@ -73,7 +71,7 @@ void test_insert_delete_min()
         TEST_ASSERT_NOT_NULL(oha_bh_delete_min(heap));
     }
 
-    TEST_ASSERT_EQUAL_INT64(0, oha_bh_find_min(heap));
+    TEST_ASSERT_EQUAL_INT64(OHA_BH_NOT_FOUND, oha_bh_find_min(heap));
     TEST_ASSERT_NULL(oha_bh_delete_min(heap));
 
     oha_bh_destroy(heap);
@@ -83,10 +81,9 @@ void test_insert_delete_min()
 void test_insert_delete_min_check_value_ptr()
 {
     const size_t array_size = 10 * 1;
-    const struct oha_bh_config config = {
-        .value_size = sizeof(int64_t),
-        .max_elems = array_size,
-    };
+    struct oha_bh_config config = {0};
+    config.value_size = sizeof(int64_t);
+    config.max_elems = array_size;
 
     struct oha_bh * heap = oha_bh_create(&config);
 
@@ -115,8 +112,48 @@ void test_insert_delete_min_check_value_ptr()
         TEST_ASSERT_EQUAL_PTR(big_rand_array[i].value, value_ptr);
     }
 
-    TEST_ASSERT_EQUAL_INT64(0, oha_bh_find_min(heap));
+    TEST_ASSERT_EQUAL_INT64(OHA_BH_NOT_FOUND, oha_bh_find_min(heap));
     TEST_ASSERT_NULL(oha_bh_delete_min(heap));
+
+    oha_bh_destroy(heap);
+    free(big_rand_array);
+}
+
+void test_insert_delete_min_check_value_ptr_resizable()
+{
+    const size_t array_size = 10000;
+    struct oha_bh_config config = {0};
+    config.value_size = sizeof(int64_t);
+    config.max_elems = 1;
+    config.resizable = true;
+
+    struct oha_bh * heap = oha_bh_create(&config);
+
+    struct key_value_pair {
+        int64_t key;
+        int64_t value;
+    };
+
+    struct key_value_pair * big_rand_array = calloc(sizeof(struct key_value_pair), array_size);
+    TEST_ASSERT_NOT_NULL_MESSAGE(big_rand_array, "could not create test array");
+
+    for (size_t i = 0; i < array_size; i++) {
+        big_rand_array[i].key = rand() % 100000;
+        int64_t * tmp_value = oha_bh_insert(heap, big_rand_array[i].key);
+        TEST_ASSERT_NOT_NULL(tmp_value);
+        *tmp_value = big_rand_array[i].key;
+        big_rand_array[i].value = big_rand_array[i].key;
+    }
+
+    qsort(big_rand_array, array_size, sizeof(struct key_value_pair), compare_int64_t);
+
+    for (size_t i = 0; i < array_size; i++) {
+        int64_t next_min = oha_bh_find_min(heap);
+        TEST_ASSERT_EQUAL_INT64(big_rand_array[i].key, next_min);
+        int64_t * tmp_value = oha_bh_delete_min(heap);
+        TEST_ASSERT_NOT_NULL(tmp_value);
+        TEST_ASSERT_EQUAL_PTR(big_rand_array[i].value, *tmp_value);
+    }
 
     oha_bh_destroy(heap);
     free(big_rand_array);
@@ -125,10 +162,10 @@ void test_insert_delete_min_check_value_ptr()
 void test_decrease_key()
 {
     const size_t array_size = 5;
-    const struct oha_bh_config config = {
-        .value_size = sizeof(int64_t),
-        .max_elems = array_size,
-    };
+    struct oha_bh_config config = {0};
+    config.value_size = sizeof(int64_t);
+    config.max_elems = array_size;
+
     struct oha_bh * heap = oha_bh_create(&config);
 
     uint64_t * array[array_size + 1];
@@ -172,7 +209,7 @@ void test_decrease_key()
     ptr = oha_bh_delete_min(heap);
     TEST_ASSERT_EQUAL_PTR(array[4], ptr);
     TEST_ASSERT_EQUAL(4, *array[4]);
-    TEST_ASSERT_EQUAL(0, oha_bh_find_min(heap));
+    TEST_ASSERT_EQUAL(OHA_BH_NOT_FOUND, oha_bh_find_min(heap));
     TEST_ASSERT_NULL(oha_bh_delete_min(heap));
 
     oha_bh_destroy(heap);
@@ -181,10 +218,10 @@ void test_decrease_key()
 void test_increase_key()
 {
     const size_t array_size = 80;
-    const struct oha_bh_config config = {
-        .value_size = sizeof(int64_t),
-        .max_elems = array_size,
-    };
+    struct oha_bh_config config = {0};
+    config.value_size = sizeof(int64_t);
+    config.max_elems = array_size;
+
     struct oha_bh * heap = oha_bh_create(&config);
 
     uint64_t * array[array_size + 1];
@@ -216,7 +253,7 @@ void test_increase_key()
     ptr = oha_bh_delete_min(heap);
     TEST_ASSERT_EQUAL_PTR(array[1], ptr);
     TEST_ASSERT_EQUAL(1, *array[1]);
-    TEST_ASSERT_EQUAL(0, oha_bh_find_min(heap));
+    TEST_ASSERT_EQUAL(OHA_BH_NOT_FOUND, oha_bh_find_min(heap));
 
     oha_bh_destroy(heap);
 }
@@ -228,6 +265,7 @@ int main(void)
     RUN_TEST(test_create_destroy);
     RUN_TEST(test_insert_delete_min);
     RUN_TEST(test_insert_delete_min_check_value_ptr);
+    RUN_TEST(test_insert_delete_min_check_value_ptr_resizable);
     RUN_TEST(test_decrease_key);
     RUN_TEST(test_increase_key);
 

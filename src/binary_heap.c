@@ -49,6 +49,59 @@ static inline void swap_keys(struct key_bucket * restrict a, struct key_bucket *
     *b = tmp_a;
 }
 
+static inline void connect_keys_values(struct oha_bh * heap)
+{
+    // connect keys and values
+    struct value_bucket * tmp_value = heap->values;
+    for (uint_fast32_t i = 0; i < heap->config.max_elems; i++) {
+        heap->keys[i].value = tmp_value;
+        tmp_value->key = &heap->keys[i];
+        tmp_value = move_ptr_num_bytes(tmp_value, heap->value_size);
+    }
+}
+
+static bool resize_table(struct oha_bh * heap)
+{
+    if (!heap->config.resizable) {
+        return false;
+    }
+
+    struct oha_memory_fp * memory = &heap->config.memory;
+    struct oha_bh tmp_heap = {0};
+    tmp_heap.config = heap->config;
+    tmp_heap.config.max_elems *= 2;
+
+    tmp_heap.keys = oha_calloc(memory, tmp_heap.config.max_elems * sizeof(struct key_bucket));
+    if (tmp_heap.keys == NULL) {
+        return false;
+    }
+
+    tmp_heap.value_size = add_alignment(sizeof(struct value_bucket) + tmp_heap.config.value_size);
+    tmp_heap.values = oha_malloc(memory, tmp_heap.config.max_elems * tmp_heap.value_size);
+    if (tmp_heap.values == NULL) {
+        oha_free(memory, tmp_heap.keys);
+        return false;
+    }
+
+    connect_keys_values(&tmp_heap);
+
+    int64_t tmp_key;
+    while (OHA_BH_NOT_FOUND != (tmp_key = oha_bh_find_min(heap))) {
+        void * value = oha_bh_delete_min(heap);
+        void * new_value = oha_bh_insert(&tmp_heap, tmp_key);
+        memcpy(new_value, value, heap->value_size);
+    }
+
+    // destroy old table buffers
+    oha_free(memory, heap->keys);
+    oha_free(memory, heap->values);
+
+    // copy new heap
+    *heap = tmp_heap;
+
+    return true;
+}
+
 static void heapify(struct oha_bh * heap, uint_fast32_t i)
 {
     uint_fast32_t l = left(i);
@@ -94,20 +147,15 @@ struct oha_bh * oha_bh_create(const struct oha_bh_config * config)
         return NULL;
     }
 
-    heap->value_size = sizeof(struct value_bucket) + config->value_size;
-    heap->values = oha_calloc(memory, config->max_elems * heap->value_size);
+    heap->value_size = add_alignment(sizeof(struct value_bucket) + config->value_size);
+    heap->values = oha_malloc(memory, config->max_elems * heap->value_size);
     if (heap->values == NULL) {
         oha_bh_destroy(heap);
         return NULL;
     }
 
     // connect keys and values
-    struct value_bucket * tmp_value = heap->values;
-    for (uint_fast32_t i = 0; i < config->max_elems; i++) {
-        heap->keys[i].value = tmp_value;
-        tmp_value->key = &heap->keys[i];
-        tmp_value = move_ptr_num_bytes(tmp_value, heap->value_size);
-    }
+    connect_keys_values(heap);
 
     return heap;
 }
@@ -118,7 +166,9 @@ void * oha_bh_insert(struct oha_bh * heap, int64_t key)
         return NULL;
     }
     if (heap->elems >= heap->config.max_elems) {
-        return NULL;
+        if (!resize_table(heap)) {
+            return NULL;
+        }
     }
 
     // insert the new key at the end
@@ -138,7 +188,7 @@ void * oha_bh_insert(struct oha_bh * heap, int64_t key)
 int64_t oha_bh_find_min(struct oha_bh * heap)
 {
     if (heap == NULL || heap->elems == 0) {
-        return 0;
+        return OHA_BH_NOT_FOUND;
     }
     return heap->keys[0].key;
 }

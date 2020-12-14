@@ -70,6 +70,7 @@ struct oha_bh_config {
     uint32_t max_elems;
     bool resizable;
 };
+#define OHA_BH_NOT_FOUND INT64_MIN
 struct oha_bh;
 struct oha_bh * oha_bh_create(const struct oha_bh_config * config);
 void oha_bh_destroy(struct oha_bh * heap);
