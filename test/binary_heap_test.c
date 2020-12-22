@@ -119,7 +119,7 @@ void test_insert_delete_min_check_value_ptr()
     free(big_rand_array);
 }
 
-void test_insert_delete_min_check_value_ptr_resizable()
+void test_insert_delete_min_resizable()
 {
     const size_t array_size = 10000;
     struct oha_bh_config config = {0};
@@ -131,7 +131,6 @@ void test_insert_delete_min_check_value_ptr_resizable()
 
     struct key_value_pair {
         int64_t key;
-        int64_t value;
     };
 
     struct key_value_pair * big_rand_array = calloc(sizeof(struct key_value_pair), array_size);
@@ -142,7 +141,6 @@ void test_insert_delete_min_check_value_ptr_resizable()
         int64_t * tmp_value = oha_bh_insert(heap, big_rand_array[i].key);
         TEST_ASSERT_NOT_NULL(tmp_value);
         *tmp_value = big_rand_array[i].key;
-        big_rand_array[i].value = big_rand_array[i].key;
     }
 
     qsort(big_rand_array, array_size, sizeof(struct key_value_pair), compare_int64_t);
@@ -152,7 +150,7 @@ void test_insert_delete_min_check_value_ptr_resizable()
         TEST_ASSERT_EQUAL_INT64(big_rand_array[i].key, next_min);
         int64_t * tmp_value = oha_bh_delete_min(heap);
         TEST_ASSERT_NOT_NULL(tmp_value);
-        TEST_ASSERT_EQUAL_PTR(big_rand_array[i].value, *tmp_value);
+        TEST_ASSERT_EQUAL_INT64(big_rand_array[i].key, *tmp_value);
     }
 
     oha_bh_destroy(heap);
@@ -265,7 +263,7 @@ int main(void)
     RUN_TEST(test_create_destroy);
     RUN_TEST(test_insert_delete_min);
     RUN_TEST(test_insert_delete_min_check_value_ptr);
-    RUN_TEST(test_insert_delete_min_check_value_ptr_resizable);
+    RUN_TEST(test_insert_delete_min_resizable);
     RUN_TEST(test_decrease_key);
     RUN_TEST(test_increase_key);
 

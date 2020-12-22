@@ -20,15 +20,18 @@ target_include_directories(${LIBNAME}_unity PUBLIC ${MODULE_UNITY_PATH}/src/)
 target_compile_options(${LIBNAME}_unity PRIVATE ${PROJECT_COMPILE_OPTIONS})
 
 # add tests
-add_unit_test(linear_hash_table_test_shared linear_hash_table_test.c)
-target_link_libraries(linear_hash_table_test_shared ${LIBNAME})
+add_unit_test(linear_probing_hash_table_test_shared linear_probing_hash_table_test.c)
+target_link_libraries(linear_probing_hash_table_test_shared ${LIBNAME})
 
-add_unit_test(linear_hash_table_test_static linear_hash_table_test.c)
-target_link_libraries(linear_hash_table_test_static ${LIBNAME}_static)
+add_unit_test(linear_probing_hash_table_test_static linear_probing_hash_table_test.c)
+target_link_libraries(linear_probing_hash_table_test_static ${LIBNAME}_static)
 
 # add tests
-add_unit_test(linear_hash_table_test_fix_key_8 linear_hash_table_test.c)
-target_link_libraries(linear_hash_table_test_fix_key_8 ${LIBNAME}_static_8)
+add_unit_test(linear_probing_hash_table_test_fix_key_8 linear_probing_hash_table_test.c)
+target_link_libraries(linear_probing_hash_table_test_fix_key_8 ${LIBNAME}_static_8)
+
+add_unit_test(temporal_prioritized_hash_table_test_static temporal_prioritized_hash_table_test.c)
+target_link_libraries(temporal_prioritized_hash_table_test_static ${LIBNAME}_static)
 
 add_unit_test(binary_heap_test_shared binary_heap_test.c)
 target_link_libraries(binary_heap_test_shared ${LIBNAME})

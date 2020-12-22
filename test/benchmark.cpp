@@ -130,9 +130,16 @@ int main(int argc, char * argv[])
                 switch (mode) {
                     case 1:
                         value = (struct value *)oha_lpht_look_up(table, &key);
+                        if (value == NULL) {
+                            exit(1);
+                        }
                         break;
                     case 2:
                         unordered_map<uint64_t, struct value>::const_iterator got = umap->find(key);
+                        if (got == umap->end()) {
+                            exit(2);
+                        }
+                        break;
                 }
                 lookups++;
                 break;

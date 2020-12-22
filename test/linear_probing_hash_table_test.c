@@ -51,7 +51,7 @@ void test_insert_look_up()
             TEST_ASSERT_NULL(value_lool_up);
         }
 
-        struct oha_lpht_status status;
+        struct oha_lpht_status status = {0};
         TEST_ASSERT_TRUE(oha_lpht_get_status(table, &status));
         TEST_ASSERT_EQUAL_UINT64(i, status.elems_in_use);
         TEST_ASSERT_EQUAL_UINT64(config.max_elems, status.max_elems);

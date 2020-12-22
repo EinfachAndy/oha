@@ -69,7 +69,7 @@ struct oha_lpht {
     bool clear_mode_on;
 };
 
-static inline void * get_value(struct key_bucket * bucket)
+static inline void * get_value(const struct key_bucket * const bucket)
 {
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
     return bucket->value->value_buffer;
@@ -79,12 +79,12 @@ static inline void * get_value(struct key_bucket * bucket)
 }
 
 // does not support overflow
-static void * get_next_value(struct oha_lpht * table, VALUE_BUCKET_TYPE * value)
+static void * get_next_value(const struct oha_lpht * const table, const VALUE_BUCKET_TYPE * const value)
 {
     return move_ptr_num_bytes(value, table->config.value_size);
 }
 
-static uint64_t hash_key(struct oha_lpht * table, const void * key)
+static uint64_t hash_key(const struct oha_lpht * const table, const void * const key)
 {
 #ifdef OHA_FIX_KEY_SIZE_IN_BYTES
     (void)table;
@@ -94,13 +94,13 @@ static uint64_t hash_key(struct oha_lpht * table, const void * key)
 #endif
 }
 
-static struct key_bucket * get_start_bucket(struct oha_lpht * table, uint64_t hash)
+static struct key_bucket * get_start_bucket(const struct oha_lpht * const table, uint64_t hash)
 {
     size_t index = oha_map_range_u32(hash, table->storage.max_indicies);
     return move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * index);
 }
 
-static struct key_bucket * get_next_bucket(struct oha_lpht * table, struct key_bucket * bucket)
+static struct key_bucket * get_next_bucket(const struct oha_lpht * const table, const struct key_bucket * const bucket)
 {
     struct key_bucket * current = move_ptr_num_bytes(bucket, table->storage.key_bucket_size);
     // overflow, get to the first elem
@@ -110,7 +110,7 @@ static struct key_bucket * get_next_bucket(struct oha_lpht * table, struct key_b
     return current;
 }
 
-static void swap_bucket_values(struct key_bucket * restrict a, struct key_bucket * restrict b)
+static void swap_bucket_values(struct key_bucket * const restrict a, struct key_bucket * const restrict b)
 {
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
     a->value->key = b;
@@ -121,7 +121,7 @@ static void swap_bucket_values(struct key_bucket * restrict a, struct key_bucket
     b->value = tmp;
 }
 
-static bool calculate_storage_values(struct oha_lpht_config * config, struct storage_info * values)
+static bool calculate_storage_values(struct oha_lpht_config * const config, struct storage_info * const values)
 {
     if (config == NULL || values == NULL) {
         return false;
@@ -150,9 +150,9 @@ static bool calculate_storage_values(struct oha_lpht_config * config, struct sto
     return true;
 }
 
-static struct oha_lpht * init_table_value(const struct oha_lpht_config * config,
-                                          const struct storage_info * storage,
-                                          struct oha_lpht * table)
+static struct oha_lpht * init_table_value(const struct oha_lpht_config * const config,
+                                          const struct storage_info * const storage,
+                                          struct oha_lpht * const table)
 {
     table->storage = *storage;
     const struct oha_memory_fp * memory = &table->config.memory;
@@ -189,7 +189,7 @@ static struct oha_lpht * init_table_value(const struct oha_lpht_config * config,
 }
 
 // restores the hash table invariant
-static void probify(struct oha_lpht * table, struct key_bucket * start_bucket, uint_fast32_t offset)
+static void probify(struct oha_lpht * const table, struct key_bucket * const start_bucket, uint_fast32_t offset)
 {
     struct key_bucket * bucket = start_bucket;
     uint_fast32_t i = 0;
@@ -211,7 +211,7 @@ static void probify(struct oha_lpht * table, struct key_bucket * start_bucket, u
     } while (bucket->is_occupied);
 }
 
-static bool resize_table(struct oha_lpht * table)
+static bool resize_table(struct oha_lpht * const table)
 {
     if (!table->config.resizable) {
         return false;
@@ -219,6 +219,7 @@ static bool resize_table(struct oha_lpht * table)
 
     struct oha_lpht tmp_table = {0};
     tmp_table.config = table->config;
+    // TODO add overflow check 32 bit
     tmp_table.config.max_elems *= 2;
 
     struct storage_info storage;
@@ -267,7 +268,7 @@ clean_up_and_error:
  * public functions
  */
 
-void oha_lpht_destroy(struct oha_lpht * table)
+void oha_lpht_destroy(struct oha_lpht * const table)
 {
     if (table == NULL) {
         return;
@@ -279,9 +280,9 @@ void oha_lpht_destroy(struct oha_lpht * table)
     oha_free(memory, table);
 }
 
-struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * config)
+struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * const config)
 {
-    struct oha_lpht * table = oha_calloc(&config->memory, sizeof(struct oha_lpht));
+    struct oha_lpht * const table = oha_calloc(&config->memory, sizeof(struct oha_lpht));
     if (table == NULL) {
         return NULL;
     }
@@ -297,7 +298,7 @@ struct oha_lpht * oha_lpht_create(const struct oha_lpht_config * config)
 }
 
 // return pointer to value
-void * oha_lpht_look_up(struct oha_lpht * table, const void * key)
+void * oha_lpht_look_up(const struct oha_lpht * const table, const void * const key)
 {
     if (table == NULL || key == NULL) {
         return NULL;
@@ -315,7 +316,7 @@ void * oha_lpht_look_up(struct oha_lpht * table, const void * key)
 }
 
 // return pointer to value
-void * oha_lpht_insert(struct oha_lpht * table, const void * key)
+void * oha_lpht_insert(struct oha_lpht * const table, const void * const key)
 {
     if (table == NULL || key == NULL) {
         return NULL;
@@ -348,7 +349,7 @@ void * oha_lpht_insert(struct oha_lpht * table, const void * key)
     return get_value(bucket);
 }
 
-void * oha_lpht_get_key_from_value(const void * value)
+void * oha_lpht_get_key_from_value(const void * const value)
 {
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
     if (value == NULL) {
@@ -364,7 +365,7 @@ void * oha_lpht_get_key_from_value(const void * value)
 #endif
 }
 
-void oha_lpht_clear(struct oha_lpht * table)
+void oha_lpht_clear(struct oha_lpht * const table)
 {
     if (table == NULL) {
         return;
@@ -375,7 +376,7 @@ void oha_lpht_clear(struct oha_lpht * table)
     }
 }
 
-bool oha_lpht_get_next_element_to_remove(struct oha_lpht * table, struct oha_key_value_pair * pair)
+bool oha_lpht_get_next_element_to_remove(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
 {
     if (table == NULL || !table->clear_mode_on || pair == NULL) {
         return false;
@@ -399,7 +400,7 @@ bool oha_lpht_get_next_element_to_remove(struct oha_lpht * table, struct oha_key
 }
 
 // return true if element was in the table
-void * oha_lpht_remove(struct oha_lpht * table, const void * key)
+void * oha_lpht_remove(struct oha_lpht * const table, const void * const key)
 {
     uint64_t hash = hash_key(table, key);
 
@@ -451,7 +452,7 @@ void * oha_lpht_remove(struct oha_lpht * table, const void * key)
     return value;
 }
 
-bool oha_lpht_get_status(struct oha_lpht * table, struct oha_lpht_status * status)
+bool oha_lpht_get_status(const struct oha_lpht * const table, struct oha_lpht_status * const status)
 {
     if (table == NULL || status == NULL) {
         return false;
@@ -459,6 +460,7 @@ bool oha_lpht_get_status(struct oha_lpht * table, struct oha_lpht_status * statu
 
     status->max_elems = table->max_elems;
     status->elems_in_use = table->elems;
-    status->size_in_bytes = table->config.value_size;
+    status->size_in_bytes =
+        table->storage.hash_table_size_keys + table->storage.hash_table_size_values + sizeof(struct oha_lpht);
     return true;
 }

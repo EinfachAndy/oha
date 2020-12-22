@@ -1,4 +1,6 @@
-set(SOURCE_FILES linear_probing_hash_table.c binary_heap.c prioritized_hash_table.c)
+set(SOURCE_FILES    linear_probing_hash_table.c
+                    binary_heap.c
+                    temporal_prioritized_hash_table.c)
 
 if(WITH_KEY_FROM_VALUE_FUNC)
 	add_definitions(-DOHA_WITH_KEY_FROM_VALUE_SUPPORT)
