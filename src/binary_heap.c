@@ -25,6 +25,14 @@ struct oha_bh {
     struct key_bucket * keys;
 };
 
+static inline struct value_bucket * get_value_bucket(void * value)
+{
+    struct value_bucket * value_bucket =
+        (struct value_bucket *)((uint8_t *)value - offsetof(struct value_bucket, value_buffer));
+    assert(value_bucket->key->value == value_bucket);
+    return value_bucket;
+}
+
 static inline uint_fast32_t parent(uint_fast32_t i)
 {
     return (i - 1) / 2;
@@ -192,6 +200,10 @@ int64_t oha_bh_find_min(const struct oha_bh * const heap)
     if (heap == NULL || heap->elems == 0) {
         return OHA_BH_NOT_FOUND;
     }
+    if (heap->elems == 0) {
+        return OHA_BH_NOT_FOUND;
+    }
+
     return heap->keys[0].key;
 }
 
@@ -216,15 +228,39 @@ void * oha_bh_delete_min(struct oha_bh * const heap)
     return heap->keys[heap->elems].value->value_buffer;
 }
 
+void * oha_bh_remove(struct oha_bh * const heap, void * const value, int64_t * out_key)
+{
+    if (heap == NULL || value == NULL) {
+        return NULL;
+    }
+
+    struct value_bucket * value_bucket = get_value_bucket(value);
+    struct key_bucket * key = value_bucket->key;
+    int64_t key_value = key->key;
+
+    // move to top
+    if (OHA_BH_MIN_VALUE != oha_bh_change_key(heap, value, OHA_BH_MIN_VALUE)) {
+        return NULL;
+    }
+    // delete the swapped element
+    if (oha_bh_delete_min(heap) != value_bucket->value_buffer) {
+        return NULL;
+    }
+
+    if (out_key != NULL) {
+        *out_key = key_value;
+    }
+
+    return value_bucket->value_buffer;
+}
+
 int64_t oha_bh_change_key(struct oha_bh * const heap, void * const value, int64_t new_val)
 {
     if (heap == NULL || value == NULL) {
-        return 0;
+        return OHA_BH_NOT_FOUND;
     }
 
-    struct value_bucket * value_bucket =
-        (struct value_bucket *)((uint8_t *)value - offsetof(struct value_bucket, value_buffer));
-    assert(value_bucket->key->value == value_bucket);
+    struct value_bucket * value_bucket = get_value_bucket(value);
 
     enum mode {
         UNCHANGED_KEY,

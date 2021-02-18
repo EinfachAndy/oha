@@ -73,6 +73,7 @@ struct oha_bh_config {
     bool resizable;
 };
 #define OHA_BH_NOT_FOUND INT64_MIN
+#define OHA_BH_MIN_VALUE (OHA_BH_NOT_FOUND + 1)
 struct oha_bh;
 struct oha_bh * oha_bh_create(const struct oha_bh_config * config);
 void oha_bh_destroy(struct oha_bh * heap);
@@ -81,6 +82,7 @@ int64_t oha_bh_find_min(const struct oha_bh * heap);
 void * oha_bh_delete_min(struct oha_bh * heap);
 void * oha_bh_insert(struct oha_bh * heap, int64_t key);
 int64_t oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val);
+void * oha_bh_remove(struct oha_bh * const heap, void * const value, int64_t * out_key);
 
 /**********************************************************************************************************************
  *  tpht (temporal prioritized hash table)
@@ -95,13 +97,14 @@ struct oha_tpht_config {
 
 struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * config);
 void oha_tpht_destroy(struct oha_tpht * tpht);
-void * oha_tpht_insert(struct oha_tpht * tpht, const void * key, int64_t timestamp, uint8_t timeout_slot_id);
+bool oha_tpht_increase_global_time(struct oha_tpht * tpht, int64_t timestamp);
+void * oha_tpht_insert(struct oha_tpht * tpht, const void * key, uint8_t timeout_slot_id);
 __attribute__((pure))
 void * oha_tpht_look_up(const struct oha_tpht * tpht, const void * key);
 void * oha_tpht_remove(struct oha_tpht * tpht, const void * key);
 int8_t oha_tpht_add_timeout_slot(struct oha_tpht * tpht, int64_t timeout, uint32_t num_elements, bool resizable);
 void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t timeout_slot_id);
-bool oha_tpht_next_timeout_entry(struct oha_tpht * tpht, struct oha_key_value_pair * next_pair);
+size_t oha_tpht_next_timeout_entries(struct oha_tpht * tpht, struct oha_key_value_pair * next_pair, size_t num_pairs);
 void * oha_tpht_update_time_for_entry(struct oha_tpht * tpht, const void * key, int64_t new_timestamp);
 
 #ifdef __cplusplus

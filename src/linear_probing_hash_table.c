@@ -11,8 +11,6 @@
 
 #include "utils.h"
 
-#define XXHASH_SEED 0xc800c831bc63dff8
-
 #ifdef OHA_FIX_KEY_SIZE_IN_BYTES
 #if OHA_FIX_KEY_SIZE_IN_BYTES == 0
 #error "unsupported compile time key size"
@@ -88,9 +86,9 @@ static uint64_t hash_key(const struct oha_lpht * const table, const void * const
 {
 #ifdef OHA_FIX_KEY_SIZE_IN_BYTES
     (void)table;
-    return XXH3_64bits_withSeed(key, OHA_FIX_KEY_SIZE_IN_BYTES, XXHASH_SEED);
+    return XXH3_64bits(key, OHA_FIX_KEY_SIZE_IN_BYTES);
 #else
-    return XXH3_64bits_withSeed(key, table->config.key_size, XXHASH_SEED);
+    return XXH3_64bits(key, table->config.key_size);
 #endif
 }
 
