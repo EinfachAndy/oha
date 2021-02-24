@@ -140,6 +140,8 @@ void test_set_timeout_slot()
 
     TEST_ASSERT_TRUE(oha_tpht_increase_global_time(table, 2000000));
     TEST_ASSERT_EQUAL(0, oha_tpht_next_timeout_entries(table, next_pairs, num_timeouts));
+
+    oha_tpht_destroy(table);
 }
 
 void test_simple_insert_look_up_remove()

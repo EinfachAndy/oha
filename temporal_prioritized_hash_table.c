@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "utils.h"
+#include "oha_utils.h"
 
 struct storage_info {
     size_t hash_table_size;
@@ -297,6 +297,7 @@ void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8
         void * old_heap_value = oha_bh_remove(tpht->slots[old_slot].bh, hash_table_value->heap_value, &timestamp);
         assert(old_heap_value != NULL);
         assert(0 == memcmp(old_heap_value, key, tpht->lpht_config.key_size));
+        (void)old_heap_value;
     } else {
         timestamp = tpht->last_timestamp;
     }

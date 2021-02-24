@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
+#include "oha_utils.h"
 
 struct value_bucket {
     struct key_bucket * key;
@@ -64,7 +64,7 @@ static inline void connect_keys_values(struct oha_bh * const heap)
     for (uint_fast32_t i = 0; i < heap->config.max_elems; i++) {
         heap->keys[i].value = tmp_value;
         tmp_value->key = &heap->keys[i];
-        tmp_value = move_ptr_num_bytes(tmp_value, heap->value_size);
+        tmp_value = oha_move_ptr_num_bytes(tmp_value, heap->value_size);
     }
 }
 
@@ -86,7 +86,7 @@ static bool resize_table(struct oha_bh * const heap)
         return false;
     }
 
-    tmp_heap.value_size = add_alignment(sizeof(struct value_bucket) + config->value_size);
+    tmp_heap.value_size = oha_add_alignment(sizeof(struct value_bucket) + config->value_size);
     tmp_heap.values = oha_malloc(memory, config->max_elems * tmp_heap.value_size);
     if (tmp_heap.values == NULL) {
         oha_free(memory, tmp_heap.keys);
@@ -157,7 +157,7 @@ struct oha_bh * oha_bh_create(const struct oha_bh_config * const config)
         return NULL;
     }
 
-    heap->value_size = add_alignment(sizeof(struct value_bucket) + config->value_size);
+    heap->value_size = oha_add_alignment(sizeof(struct value_bucket) + config->value_size);
     heap->values = oha_malloc(memory, config->max_elems * heap->value_size);
     if (heap->values == NULL) {
         oha_bh_destroy(heap);

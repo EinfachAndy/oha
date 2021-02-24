@@ -25,9 +25,3 @@ make
 ctest
 sudo make install
 ```
-
-## Build modifiers
-
-- to set a fixed hash table key size at compile time set the following defintion at the target:
-    `target_compile_definitions(oha PRIVATE OHA_FIX_KEY_SIZE_IN_BYTES=<n>)`
-    `target_compile_definitions(oha_static PRIVATE OHA_FIX_KEY_SIZE_IN_BYTES=<n>)`

@@ -7,21 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "oha_utils.h"
 #include "xxHash/xxh3.h"
-
-#include "utils.h"
-
-#ifdef OHA_FIX_KEY_SIZE_IN_BYTES
-#if OHA_FIX_KEY_SIZE_IN_BYTES == 0
-#error "unsupported compile time key size"
-#endif
-// let the the compiler optimize memory calls by compile time constant
-#define MEMCPY_KEY(dest, src, n) memcpy(dest, src, OHA_FIX_KEY_SIZE_IN_BYTES);
-#define MEMCMP_KEY(a, b, n) memcmp(a, b, OHA_FIX_KEY_SIZE_IN_BYTES)
-#else
-#define MEMCPY_KEY(dest, src, n) memcpy(dest, src, n);
-#define MEMCMP_KEY(a, b, n) memcmp(a, b, n)
-#endif
 
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
 struct key_bucket;
@@ -79,28 +66,23 @@ static inline void * get_value(const struct key_bucket * const bucket)
 // does not support overflow
 static void * get_next_value(const struct oha_lpht * const table, const VALUE_BUCKET_TYPE * const value)
 {
-    return move_ptr_num_bytes(value, table->config.value_size);
+    return oha_move_ptr_num_bytes(value, table->config.value_size);
 }
 
 static uint64_t hash_key(const struct oha_lpht * const table, const void * const key)
 {
-#ifdef OHA_FIX_KEY_SIZE_IN_BYTES
-    (void)table;
-    return XXH3_64bits(key, OHA_FIX_KEY_SIZE_IN_BYTES);
-#else
     return XXH3_64bits(key, table->config.key_size);
-#endif
 }
 
 static struct key_bucket * get_start_bucket(const struct oha_lpht * const table, uint64_t hash)
 {
     size_t index = oha_map_range_u32(hash, table->storage.max_indicies);
-    return move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * index);
+    return oha_move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * index);
 }
 
 static struct key_bucket * get_next_bucket(const struct oha_lpht * const table, const struct key_bucket * const bucket)
 {
-    struct key_bucket * current = move_ptr_num_bytes(bucket, table->storage.key_bucket_size);
+    struct key_bucket * current = oha_move_ptr_num_bytes(bucket, table->storage.key_bucket_size);
     // overflow, get to the first elem
     if (current > table->last_key_bucket) {
         current = table->key_buckets;
@@ -130,18 +112,14 @@ static bool calculate_storage_values(struct oha_lpht_config * const config, stru
         return false;
     }
 
-#ifndef OHA_FIX_KEY_SIZE_IN_BYTES
     if (config->key_size == 0) {
         return false;
     }
-#else
-    config->key_size = OHA_FIX_KEY_SIZE_IN_BYTES;
-#endif
 
     // TODO add overflow checks
     values->max_indicies = ceil((1 / config->load_factor) * config->max_elems) + 1;
-    config->value_size = TABLE_VALUE_BUCKET_SIZE + add_alignment(config->value_size);
-    values->key_bucket_size = add_alignment(sizeof(struct key_bucket) + config->key_size);
+    config->value_size = TABLE_VALUE_BUCKET_SIZE + oha_add_alignment(config->value_size);
+    values->key_bucket_size = oha_add_alignment(sizeof(struct key_bucket) + config->key_size);
     values->hash_table_size_keys = values->key_bucket_size * values->max_indicies;
     values->hash_table_size_values = config->value_size * values->max_indicies;
 
@@ -167,7 +145,7 @@ static struct oha_lpht * init_table_value(const struct oha_lpht_config * const c
     }
 
     table->last_key_bucket =
-        move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * (table->storage.max_indicies - 1));
+        oha_move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * (table->storage.max_indicies - 1));
     table->max_elems = config->max_elems;
     table->current_bucket_to_clear = NULL;
     table->clear_mode_on = false;
@@ -198,7 +176,7 @@ static void probify(struct oha_lpht * const table, struct key_bucket * const sta
         if (bucket->offset >= offset || bucket->offset >= i) {
             // TODO mark bucket as dirty and do not probify
             swap_bucket_values(start_bucket, bucket);
-            MEMCPY_KEY(start_bucket->key_buffer, bucket->key_buffer, table->config.key_size);
+            memcpy(start_bucket->key_buffer, bucket->key_buffer, table->config.key_size);
             start_bucket->offset = bucket->offset - i;
             start_bucket->is_occupied = 1;
             bucket->is_occupied = 0;
@@ -305,7 +283,7 @@ void * oha_lpht_look_up(const struct oha_lpht * const table, const void * const 
     struct key_bucket * bucket = get_start_bucket(table, hash);
     while (bucket->is_occupied) {
         // circle + length check
-        if (MEMCMP_KEY(bucket->key_buffer, key, table->config.key_size) == 0) {
+        if (memcmp(bucket->key_buffer, key, table->config.key_size) == 0) {
             return get_value(bucket);
         }
         bucket = get_next_bucket(table, bucket);
@@ -330,7 +308,7 @@ void * oha_lpht_insert(struct oha_lpht * const table, const void * const key)
 
     uint_fast32_t offset = 0;
     while (bucket->is_occupied) {
-        if (MEMCMP_KEY(bucket->key_buffer, key, table->config.key_size) == 0) {
+        if (memcmp(bucket->key_buffer, key, table->config.key_size) == 0) {
             // already inserted
             return get_value(bucket);
         }
@@ -339,7 +317,7 @@ void * oha_lpht_insert(struct oha_lpht * const table, const void * const key)
     }
 
     // insert key
-    MEMCPY_KEY(bucket->key_buffer, key, table->config.key_size);
+    memcpy(bucket->key_buffer, key, table->config.key_size);
     bucket->offset = offset;
     bucket->is_occupied = 1;
 
@@ -388,7 +366,7 @@ bool oha_lpht_get_next_element_to_remove(struct oha_lpht * const table, struct o
             stop = true;
         }
         table->current_bucket_to_clear =
-            move_ptr_num_bytes(table->current_bucket_to_clear, table->storage.key_bucket_size);
+            oha_move_ptr_num_bytes(table->current_bucket_to_clear, table->storage.key_bucket_size);
         if (stop == true) {
             break;
         }
@@ -406,7 +384,7 @@ void * oha_lpht_remove(struct oha_lpht * const table, const void * const key)
     struct key_bucket * bucket_to_remove = NULL;
     struct key_bucket * current = get_start_bucket(table, hash);
     while (current->is_occupied) {
-        if (MEMCMP_KEY(current->key_buffer, key, table->config.key_size) == 0) {
+        if (memcmp(current->key_buffer, key, table->config.key_size) == 0) {
             bucket_to_remove = current;
             break;
         }
@@ -435,7 +413,7 @@ void * oha_lpht_remove(struct oha_lpht * const table, const void * const key)
     if (collision != NULL) {
         // copy collision to the element to remove
         swap_bucket_values(bucket_to_remove, collision);
-        MEMCPY_KEY(bucket_to_remove->key_buffer, collision->key_buffer, table->config.key_size);
+        memcpy(bucket_to_remove->key_buffer, collision->key_buffer, table->config.key_size);
         collision->is_occupied = 0;
         collision->offset = 0;
         probify(table, collision, 0);

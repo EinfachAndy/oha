@@ -1,5 +1,5 @@
-#ifndef ORDERED_HASHING_H_
-#define ORDERED_HASHING_H_
+#ifndef OHA_ORDERED_HASHING_H_
+#define OHA_ORDERED_HASHING_H_
 
 #ifdef __cplusplus
 extern "C" {

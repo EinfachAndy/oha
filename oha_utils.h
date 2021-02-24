@@ -19,12 +19,12 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-static inline size_t add_alignment(size_t unaligned_size)
+static inline size_t oha_add_alignment(size_t unaligned_size)
 {
     return unaligned_size + (unaligned_size % SIZE_T_WIDTH);
 }
 
-static inline void * move_ptr_num_bytes(const void * const ptr, size_t num_bytes)
+static inline void * oha_move_ptr_num_bytes(const void * const ptr, size_t num_bytes)
 {
     return (((uint8_t *)ptr) + num_bytes);
 }
