@@ -8,7 +8,12 @@
 #include <string.h>
 
 #include "oha_utils.h"
+
+// xxhash has most speed with O3
+#pragma GCC push_options
+#pragma GCC optimize ("O3")
 #include "xxHash/xxh3.h"
+#pragma GCC pop_options
 
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
 struct key_bucket;
