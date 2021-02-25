@@ -32,19 +32,23 @@ endif()
 set(LIBNAME "oha")
 set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic)
 
+set(OHA_LINK_LIBS m)
 set(SOURCE_FILES    linear_probing_hash_table.c
                     binary_heap.c
                     temporal_prioritized_hash_table.c)
 
-# object files
+# compile object files
 add_library(${LIBNAME}_obj OBJECT ${SOURCE_FILES})
 target_compile_options(${LIBNAME}_obj PUBLIC ${PROJECT_COMPILE_OPTIONS} -fPIC)
 target_compile_definitions(${LIBNAME}_obj PRIVATE ${OHA_COMPILE_DEFINITIONS})
 
-# shared lib
+# link shared lib
 if(${BUILD_SHARED_LIB})
     add_library(${LIBNAME} SHARED $<TARGET_OBJECTS:${LIBNAME}_obj>)
-    target_link_libraries(${LIBNAME} PUBLIC m)
+    set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/oha.symbols")
+    set(LINK_OPTIONS -s -Wl,--gc-sections -Wl,--strip-all -Wl,--version-script=${LINKER_SCRIPT})
+    set_target_properties(${LIBNAME} PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
+    target_link_libraries(${LIBNAME} PUBLIC ${OHA_LINK_LIBS} ${LINK_OPTIONS})
     target_include_directories(${LIBNAME} PUBLIC ${PROJECT_SOURCE_DIR})
     set(VERSION_MAJOR 0)
     set(VERSION_MINOR 1)
@@ -58,9 +62,9 @@ if(${BUILD_SHARED_LIB})
             COMPONENT lib)
 endif()
 
-# static lib
+# archive static lib
 add_library(${LIBNAME}_static STATIC $<TARGET_OBJECTS:${LIBNAME}_obj>)
-target_link_libraries(${LIBNAME}_static PUBLIC m)
+target_link_libraries(${LIBNAME}_static PUBLIC ${OHA_LINK_LIBS})
 target_include_directories(${LIBNAME}_static PUBLIC ${PROJECT_SOURCE_DIR})
 install(TARGETS ${LIBNAME}_static
         ARCHIVE

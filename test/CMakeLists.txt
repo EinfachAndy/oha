@@ -10,7 +10,7 @@ endmacro()
 
 # build unity
 set(MODULE_UNITY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Unity)
-add_library(${LIBNAME}_unity SHARED ${MODULE_UNITY_PATH}/src/unity.c)
+add_library(${LIBNAME}_unity STATIC ${MODULE_UNITY_PATH}/src/unity.c)
 target_include_directories(${LIBNAME}_unity PUBLIC ${MODULE_UNITY_PATH}/src/)
 target_compile_options(${LIBNAME}_unity PRIVATE ${PROJECT_COMPILE_OPTIONS})
 
