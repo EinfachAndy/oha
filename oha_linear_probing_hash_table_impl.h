@@ -216,17 +216,22 @@ static inline bool oha_lpht_resize_table(struct oha_lpht * const table)
         return false;
     }
 
-    struct oha_lpht tmp_table = {0};
-    tmp_table.config = table->config;
-    // TODO add overflow check 32 bit
-    tmp_table.config.max_elems *= 2;
-
-    struct storage_info storage;
-    if (!oha_lpht_calculate_configuration(&tmp_table.config, &storage)) {
+    const struct oha_memory_fp * memory = &table->config.memory;
+    struct oha_lpht * tmp_table = oha_calloc(memory, sizeof(struct oha_lpht));
+    if(tmp_table == NULL) {
         return false;
     }
 
-    if (oha_lpht_init_table(&tmp_table.config, &storage, &tmp_table) == NULL) {
+    tmp_table->config = table->config;
+    // TODO add overflow check 32 bit
+    tmp_table->config.max_elems *= 2;
+
+    struct storage_info storage;
+    if (!oha_lpht_calculate_configuration(&tmp_table->config, &storage)) {
+        return false;
+    }
+
+    if (oha_lpht_init_table(&tmp_table->config, &storage, tmp_table) == NULL) {
         return false;
     }
 
@@ -239,13 +244,13 @@ static inline bool oha_lpht_resize_table(struct oha_lpht * const table)
         }
         assert(pair.key != NULL);
         assert(pair.value != NULL);
-        void * new_value_buffer = oha_lpht_insert(&tmp_table, pair.key);
+        void * new_value_buffer = oha_lpht_insert(tmp_table, pair.key);
         if (new_value_buffer == NULL) {
             goto clean_up_and_error;
         }
 
         // TODO: maybe do not memcpy, let old buffer alive? -> add free value list
-        memcpy(new_value_buffer, pair.value, tmp_table.config.value_size);
+        memcpy(new_value_buffer, pair.value, tmp_table->config.value_size);
     }
 
     // destroy old table buffers
@@ -253,13 +258,15 @@ static inline bool oha_lpht_resize_table(struct oha_lpht * const table)
     oha_free(&table->config.memory, table->value_buckets);
 
     // copy new table
-    *table = tmp_table;
+    *table = *tmp_table;
+
+    oha_free(&table->config.memory, tmp_table);
 
     return true;
 
 clean_up_and_error:
-    oha_free(&tmp_table.config.memory, tmp_table.key_buckets);
-    oha_free(&tmp_table.config.memory, tmp_table.value_buckets);
+    oha_lpht_destroy(tmp_table);
+
     return false;
 }
 

@@ -16,9 +16,6 @@
 #error "unsupported plattform"
 #endif
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
 #define OHA_ALIGN_UP(_num) (((_num) + ((SIZE_T_WIDTH) - 1)) & ~((SIZE_T_WIDTH) - 1))
 
 __attribute__((always_inline))
