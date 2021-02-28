@@ -107,7 +107,6 @@ void test_insert_delete_min_check_value_ptr()
         int64_t next_min = oha_bh_find_min(heap);
         TEST_ASSERT_EQUAL_INT64(big_rand_array[i].key, next_min);
         void * value_ptr = oha_bh_delete_min(heap);
-        fprintf(stderr, "%ld --> %p\n", next_min, value_ptr);
         TEST_ASSERT_NOT_NULL(value_ptr);
         TEST_ASSERT_EQUAL_PTR(big_rand_array[i].value, value_ptr);
     }

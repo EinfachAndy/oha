@@ -123,8 +123,8 @@ static bool calculate_storage_values(struct oha_lpht_config * const config, stru
 
     // TODO add overflow checks
     values->max_indicies = ceil((1 / config->load_factor) * config->max_elems) + 1;
-    config->value_size = TABLE_VALUE_BUCKET_SIZE + oha_add_alignment(config->value_size);
-    values->key_bucket_size = oha_add_alignment(sizeof(struct key_bucket) + config->key_size);
+    config->value_size = TABLE_VALUE_BUCKET_SIZE + OHA_ALIGN_UP(config->value_size);
+    values->key_bucket_size = OHA_ALIGN_UP(sizeof(struct key_bucket) + config->key_size);
     values->hash_table_size_keys = values->key_bucket_size * values->max_indicies;
     values->hash_table_size_values = config->value_size * values->max_indicies;
 

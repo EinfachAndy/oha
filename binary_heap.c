@@ -86,7 +86,7 @@ static bool resize_table(struct oha_bh * const heap)
         return false;
     }
 
-    tmp_heap.value_size = oha_add_alignment(sizeof(struct value_bucket) + config->value_size);
+    tmp_heap.value_size = OHA_ALIGN_UP(sizeof(struct value_bucket) + config->value_size);
     tmp_heap.values = oha_malloc(memory, config->max_elems * tmp_heap.value_size);
     if (tmp_heap.values == NULL) {
         oha_free(memory, tmp_heap.keys);
@@ -157,7 +157,7 @@ struct oha_bh * oha_bh_create(const struct oha_bh_config * const config)
         return NULL;
     }
 
-    heap->value_size = oha_add_alignment(sizeof(struct value_bucket) + config->value_size);
+    heap->value_size = OHA_ALIGN_UP(sizeof(struct value_bucket) + config->value_size);
     heap->values = oha_malloc(memory, config->max_elems * heap->value_size);
     if (heap->values == NULL) {
         oha_bh_destroy(heap);
