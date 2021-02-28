@@ -12,7 +12,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # CMAKE_BUILD_TYPE=ASAN
-set(CMAKE_C_FLAGS_ASAN "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -O0")
+set(CMAKE_C_FLAGS_ASAN "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer -O0 -g3")
 set(CMAKE_EXE_LINKER_FLAGS_ASAN "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
 set(CMAKE_SHARED_LINKER_FLAGS_ASAN "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
 
@@ -33,12 +33,9 @@ set(LIBNAME "oha")
 set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic)
 
 set(OHA_LINK_LIBS m)
-set(SOURCE_FILES    linear_probing_hash_table.c
-                    binary_heap.c
-                    temporal_prioritized_hash_table.c)
 
 # compile object files
-add_library(${LIBNAME}_obj OBJECT ${SOURCE_FILES})
+add_library(${LIBNAME}_obj OBJECT oha.c)
 target_compile_options(${LIBNAME}_obj PUBLIC ${PROJECT_COMPILE_OPTIONS} -fPIC)
 target_compile_definitions(${LIBNAME}_obj PRIVATE ${OHA_COMPILE_DEFINITIONS})
 
@@ -72,7 +69,11 @@ install(TARGETS ${LIBNAME}_static
         COMPONENT lib)
 
 # header install command
-install(FILES "${PROJECT_SOURCE_DIR}/oha.h"
+install(FILES   "${PROJECT_SOURCE_DIR}/oha.h"
+                "${PROJECT_SOURCE_DIR}/oha_fast.h"
+                "${PROJECT_SOURCE_DIR}/oha_binary_heap_impl.h"
+                "${PROJECT_SOURCE_DIR}/oha_linear_probing_hash_table_impl.h"
+                "${PROJECT_SOURCE_DIR}/oha_temporal_prioritized_hash_table_impl.h"
         DESTINATION ${LIBNAME}
         COMPONENT dev)
 

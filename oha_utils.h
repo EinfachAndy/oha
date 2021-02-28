@@ -21,11 +21,13 @@
 
 #define OHA_ALIGN_UP(_num) (((_num) + ((SIZE_T_WIDTH) - 1)) & ~((SIZE_T_WIDTH) - 1))
 
+__attribute__((always_inline))
 static inline void * oha_move_ptr_num_bytes(const void * const ptr, size_t num_bytes)
 {
     return (((uint8_t *)ptr) + num_bytes);
 }
 
+__attribute__((always_inline))
 static inline void oha_free(const struct oha_memory_fp * const memory, void * const ptr)
 {
     assert(memory);
@@ -37,6 +39,7 @@ static inline void oha_free(const struct oha_memory_fp * const memory, void * co
     }
 }
 
+__attribute__((always_inline))
 static inline void * oha_calloc(const struct oha_memory_fp * const memory, size_t size)
 {
     assert(memory);
@@ -52,6 +55,7 @@ static inline void * oha_calloc(const struct oha_memory_fp * const memory, size_
     return ptr;
 }
 
+__attribute__((always_inline))
 static inline void * oha_malloc(const struct oha_memory_fp * const memory, size_t size)
 {
     assert(memory);
@@ -64,6 +68,7 @@ static inline void * oha_malloc(const struct oha_memory_fp * const memory, size_
     return ptr;
 }
 
+__attribute__((always_inline))
 static inline void * oha_realloc(const struct oha_memory_fp * const memory, void * const ptr, size_t size)
 {
     assert(memory);
@@ -89,11 +94,13 @@ static inline void * oha_realloc(const struct oha_memory_fp * const memory, void
  *  - modulo could takes up to 20 cycles
  *  - multiplication takes about 3 cycles
  */
+__attribute__((always_inline))
 static inline uint32_t oha_map_range_u32(uint32_t word, uint32_t p)
 {
     return (uint32_t)(((uint64_t)word * (uint64_t)p) >> 32);
 }
 
+__attribute__((always_inline))
 static inline bool oha_add_entry_to_array(const struct oha_memory_fp * const memory,
                                           void ** const array,
                                           size_t entry_size,
@@ -122,6 +129,7 @@ static inline bool oha_add_entry_to_array(const struct oha_memory_fp * const mem
     return false;
 }
 
+__attribute__((always_inline))
 static inline bool oha_remove_entry_from_array(const struct oha_memory_fp * const memory,
                                                void ** const array,
                                                size_t entry_size,

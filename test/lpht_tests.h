@@ -1,9 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
-#include <unity.h>
-
-#include "oha.h"
-
 // good for testing to create collisions
 #define LOAF_FACTOR 0.9
 
@@ -174,7 +168,7 @@ void test_clear_remove()
 
     oha_lpht_clear(table);
 
-    struct oha_key_value_pair pair;
+    struct oha_key_value_pair pair = {0};
     for (uint64_t i = 1; i <= config.max_elems; i++) {
         TEST_ASSERT(oha_lpht_get_next_element_to_remove(table, &pair));
         TEST_ASSERT_NOT_NULL(pair.key);

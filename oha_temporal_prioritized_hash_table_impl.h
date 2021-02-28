@@ -1,3 +1,6 @@
+#ifndef OHA_TEMPORAL_PRIORITIZED_HASH_TABLE_H_
+#define OHA_TEMPORAL_PRIORITIZED_HASH_TABLE_H_
+
 #include "oha.h"
 
 #include <stdlib.h>
@@ -5,26 +8,26 @@
 
 #include "oha_utils.h"
 
-struct storage_info {
+struct oha_tpht_storage_info {
     size_t hash_table_size;
     uint8_t number_of_timeout_slots;
 };
 
-struct timeout_slot {
+struct oha_tpht_timeout_slot {
     struct oha_bh * bh;
     int64_t timeout;
 };
 
 struct oha_tpht {
     struct oha_lpht * lpht;
-    struct timeout_slot * slots;
+    struct oha_tpht_timeout_slot * slots;
     size_t num_timeout_slots;
     int64_t last_timestamp;
-    struct storage_info storage;
+    struct oha_tpht_storage_info storage;
     struct oha_lpht_config lpht_config;
 };
 
-struct value_bucket {
+struct oha_tpht_value_bucket {
     void * heap_value;
     union {
         uint8_t slot_id;
@@ -33,7 +36,24 @@ struct value_bucket {
     uint8_t data[];
 };
 
-struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * const config)
+__attribute__((always_inline))
+static inline void oha_tpht_connect_heap_with_hash_table(struct oha_tpht_value_bucket * hash_table_value,
+                                                         void * heap_value,
+                                                         const void * const origin_key,
+                                                         size_t key_size,
+                                                         uint8_t slot_id)
+{
+    // TODO encode slot id in pointer
+    memcpy(heap_value, origin_key, key_size);
+    hash_table_value->heap_value = heap_value;
+    hash_table_value->slot_id = slot_id;
+}
+
+/*
+ * public functions
+ */
+
+OHA_PUBLIC_API struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * const config)
 {
     if (config == NULL) {
         return NULL;
@@ -45,7 +65,7 @@ struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * const config)
     }
 
     table->lpht_config = config->lpht_config;
-    table->lpht_config.value_size += sizeof(struct value_bucket); // space for the connection to the heap
+    table->lpht_config.value_size += sizeof(struct oha_tpht_value_bucket); // space for the connection to the heap
     table->lpht = oha_lpht_create(&table->lpht_config);
     if (table->lpht == NULL) {
         oha_tpht_destroy(table);
@@ -55,7 +75,7 @@ struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * const config)
     return table;
 }
 
-int8_t oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, uint32_t num_elements, bool resizable)
+OHA_PUBLIC_API int8_t oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, uint32_t num_elements, bool resizable)
 {
     if (tpht == NULL) {
         return -1;
@@ -79,7 +99,7 @@ int8_t oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, 
         .resizable = resizable,
     };
 
-    struct timeout_slot * next_free_slot = &tpht->slots[next_free_index];
+    struct oha_tpht_timeout_slot * next_free_slot = &tpht->slots[next_free_index];
 
     next_free_slot->bh = oha_bh_create(&bh_config);
     next_free_slot->timeout = timeout;
@@ -95,7 +115,7 @@ int8_t oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, 
     return tpht->num_timeout_slots;
 }
 
-void oha_tpht_destroy(struct oha_tpht * const tpht)
+OHA_PUBLIC_API void oha_tpht_destroy(struct oha_tpht * const tpht)
 {
     if (tpht == NULL) {
         return;
@@ -113,7 +133,7 @@ void oha_tpht_destroy(struct oha_tpht * const tpht)
     oha_free(&tpht->lpht_config.memory, tpht);
 }
 
-bool oha_tpht_increase_global_time(struct oha_tpht * const tpht, int64_t timestamp)
+OHA_PUBLIC_API bool oha_tpht_increase_global_time(struct oha_tpht * const tpht, int64_t timestamp)
 {
     if (tpht == NULL) {
         return false;
@@ -125,19 +145,7 @@ bool oha_tpht_increase_global_time(struct oha_tpht * const tpht, int64_t timesta
     return true;
 }
 
-static inline void connect_heap_with_hash_table(struct value_bucket * hash_table_value,
-                                                void * heap_value,
-                                                const void * const origin_key,
-                                                size_t key_size,
-                                                uint8_t slot_id)
-{
-    // TODO encode slot id in pointer
-    memcpy(heap_value, origin_key, key_size);
-    hash_table_value->heap_value = heap_value;
-    hash_table_value->slot_id = slot_id;
-}
-
-void * oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uint8_t timeout_slot_id)
+OHA_PUBLIC_API void * oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uint8_t timeout_slot_id)
 {
     if (tpht == NULL) {
         return NULL;
@@ -147,7 +155,7 @@ void * oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uin
         return NULL;
     }
 
-    struct value_bucket * hash_table_value = oha_lpht_insert(tpht->lpht, key);
+    struct oha_tpht_value_bucket * hash_table_value = oha_lpht_insert(tpht->lpht, key);
     if (hash_table_value == NULL) {
         return NULL;
     }
@@ -159,7 +167,8 @@ void * oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uin
             return NULL;
         }
 
-        connect_heap_with_hash_table(hash_table_value, heap_value, key, tpht->lpht_config.key_size, timeout_slot_id);
+        oha_tpht_connect_heap_with_hash_table(
+            hash_table_value, heap_value, key, tpht->lpht_config.key_size, timeout_slot_id);
     } else {
         hash_table_value->slot_id = 0;
     }
@@ -167,25 +176,25 @@ void * oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uin
     return hash_table_value->data;
 }
 
-void * oha_tpht_look_up(const struct oha_tpht * const tpht, const void * const key)
+OHA_PUBLIC_API void * oha_tpht_look_up(const struct oha_tpht * const tpht, const void * const key)
 {
     if (tpht == NULL) {
         return NULL;
     }
-    struct value_bucket * value = oha_lpht_look_up(tpht->lpht, key);
+    struct oha_tpht_value_bucket * value = oha_lpht_look_up(tpht->lpht, key);
     if (value == NULL) {
         return NULL;
     }
     return value->data;
 }
 
-void * oha_tpht_remove(struct oha_tpht * const tpht, const void * const key)
+OHA_PUBLIC_API void * oha_tpht_remove(struct oha_tpht * const tpht, const void * const key)
 {
     if (tpht == NULL) {
         return NULL;
     }
 
-    struct value_bucket * value = oha_lpht_remove(tpht->lpht, key);
+    struct oha_tpht_value_bucket * value = oha_lpht_remove(tpht->lpht, key);
     if (value == NULL) {
         return NULL;
     }
@@ -205,7 +214,7 @@ void * oha_tpht_remove(struct oha_tpht * const tpht, const void * const key)
     return value->data;
 }
 
-size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
+OHA_PUBLIC_API size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
                                      struct oha_key_value_pair * const next_pair,
                                      size_t num_pairs)
 {
@@ -219,7 +228,7 @@ size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
             if (num_pairs == num_found_entries) {
                 return num_found_entries;
             }
-            struct timeout_slot * current_slot = &tpht->slots[slot];
+            struct oha_tpht_timeout_slot * current_slot = &tpht->slots[slot];
             const int64_t min_ts = oha_bh_find_min(current_slot->bh);
             if (OHA_BH_NOT_FOUND == min_ts) {
                 break;
@@ -230,7 +239,7 @@ size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
             } else {
                 next_pair[num_found_entries].key = oha_bh_delete_min(current_slot->bh);
                 assert(next_pair[num_found_entries].key != NULL);
-                struct value_bucket * value = oha_lpht_remove(tpht->lpht, next_pair[num_found_entries].key);
+                struct oha_tpht_value_bucket * value = oha_lpht_remove(tpht->lpht, next_pair[num_found_entries].key);
                 assert(value != NULL);
                 next_pair[num_found_entries].value = value->data;
                 num_found_entries++;
@@ -243,7 +252,7 @@ size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
     return num_found_entries;
 }
 
-void * oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void * const key, int64_t new_timestamp)
+OHA_PUBLIC_API void * oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void * const key, int64_t new_timestamp)
 {
 
     if (tpht == NULL) {
@@ -254,7 +263,7 @@ void * oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void *
         return NULL;
     }
 
-    struct value_bucket * value = oha_lpht_look_up(tpht->lpht, key);
+    struct oha_tpht_value_bucket * value = oha_lpht_look_up(tpht->lpht, key);
     if (value == NULL) {
         return NULL;
     }
@@ -271,7 +280,7 @@ void * oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void *
     return NULL;
 }
 
-void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t new_slot)
+OHA_PUBLIC_API void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t new_slot)
 {
     if (tpht == NULL) {
         return NULL;
@@ -281,7 +290,7 @@ void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8
         return NULL;
     }
 
-    struct value_bucket * hash_table_value = oha_lpht_look_up(tpht->lpht, key);
+    struct oha_tpht_value_bucket * hash_table_value = oha_lpht_look_up(tpht->lpht, key);
     if (hash_table_value == NULL) {
         return NULL;
     }
@@ -308,7 +317,9 @@ void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8
         return NULL;
     }
 
-    connect_heap_with_hash_table(hash_table_value, new_heap_value, key, tpht->lpht_config.key_size, new_slot);
+    oha_tpht_connect_heap_with_hash_table(hash_table_value, new_heap_value, key, tpht->lpht_config.key_size, new_slot);
 
     return hash_table_value->data;
 }
+
+#endif

@@ -1,6 +1,6 @@
 macro(add_unit_test test_name test_file)
     add_executable(${test_name} ${test_file})
-    target_link_libraries(${test_name} oha_unity)
+    target_link_libraries(${test_name} oha_unity m)
     target_compile_options(${test_name} PRIVATE ${PROJECT_COMPILE_OPTIONS})
     add_test(NAME ${test_name}
             COMMAND ${test_name}
@@ -17,11 +17,11 @@ target_compile_options(${LIBNAME}_unity PRIVATE ${PROJECT_COMPILE_OPTIONS})
 # targets with shared lib
 if(${BUILD_SHARED_LIB})
 
-   message(STATUS "Added tests for shared lib build.")
+    message(STATUS "Added tests for shared lib build.")
 
     # add tests
-    add_unit_test(linear_probing_hash_table_test_shared linear_probing_hash_table_test.c)
-    target_link_libraries(linear_probing_hash_table_test_shared ${LIBNAME})
+    add_unit_test(lpht_tests_shared lpht_tests.c)
+    target_link_libraries(lpht_tests_shared ${LIBNAME})
 
     # benchmark
     add_executable(benchmark_shared benchmark.cpp)
@@ -29,12 +29,15 @@ if(${BUILD_SHARED_LIB})
 
 endif()
 
-# static lib test
-add_unit_test(linear_probing_hash_table_test_static linear_probing_hash_table_test.c)
-target_link_libraries(linear_probing_hash_table_test_static ${LIBNAME}_static)
+#inline lib test
+add_unit_test(lpht_tests_fast lpht_tests_fast.c)
 
-add_unit_test(temporal_prioritized_hash_table_test_static temporal_prioritized_hash_table_test.c)
-target_link_libraries(temporal_prioritized_hash_table_test_static ${LIBNAME}_static)
+# static lib test
+add_unit_test(lpht_tests_static lpht_tests.c)
+target_link_libraries(lpht_tests_static ${LIBNAME}_static)
+
+add_unit_test(tpht_tests_static tpht_tests.c)
+target_link_libraries(tpht_tests_static ${LIBNAME}_static)
 
 add_unit_test(binary_heap_test_static binary_heap_test.c)
 target_link_libraries(binary_heap_test_static ${LIBNAME}_static)
