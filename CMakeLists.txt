@@ -30,8 +30,8 @@ endif()
 
 # global vaiables
 set(LIBNAME "oha")
-set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic)
-
+set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic -flto -fdata-sections -ffunction-sections -fuse-linker-plugin)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 set(OHA_LINK_LIBS m)
 
 # compile object files
