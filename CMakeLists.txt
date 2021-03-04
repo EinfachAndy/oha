@@ -30,13 +30,23 @@ endif()
 
 # global vaiables
 set(LIBNAME "oha")
-set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic -flto -fdata-sections -ffunction-sections -fuse-linker-plugin)
+
+set(PROJECT_COMPILE_OPTIONS -std=c11 -Wall -Wextra -Wpedantic -fPIC)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    # currently not supported for clang or other
+    set(PROJECT_COMPILE_OPTIONS  ${PROJECT_COMPILE_OPTIONS}
+                                -flto
+                                -fdata-sections
+                                -ffunction-sections
+                                -fuse-linker-plugin)
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 set(OHA_LINK_LIBS m)
 
 # compile object files
 add_library(${LIBNAME}_obj OBJECT oha.c)
-target_compile_options(${LIBNAME}_obj PUBLIC ${PROJECT_COMPILE_OPTIONS} -fPIC)
+target_compile_options(${LIBNAME}_obj PUBLIC ${PROJECT_COMPILE_OPTIONS})
 target_compile_definitions(${LIBNAME}_obj PRIVATE ${OHA_COMPILE_DEFINITIONS})
 
 # link shared lib
