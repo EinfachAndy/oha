@@ -36,12 +36,12 @@ struct oha_tpht_value_bucket {
     uint8_t data[];
 };
 
-__attribute__((always_inline))
-static inline void oha_tpht_connect_heap_with_hash_table(struct oha_tpht_value_bucket * hash_table_value,
-                                                         void * heap_value,
-                                                         const void * const origin_key,
-                                                         size_t key_size,
-                                                         uint8_t slot_id)
+__attribute__((always_inline)) static inline void
+oha_tpht_connect_heap_with_hash_table(struct oha_tpht_value_bucket * hash_table_value,
+                                      void * heap_value,
+                                      const void * const origin_key,
+                                      size_t key_size,
+                                      uint8_t slot_id)
 {
     // TODO encode slot id in pointer
     memcpy(heap_value, origin_key, key_size);
@@ -53,7 +53,8 @@ static inline void oha_tpht_connect_heap_with_hash_table(struct oha_tpht_value_b
  * public functions
  */
 
-OHA_PUBLIC_API struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * const config)
+OHA_PUBLIC_API struct oha_tpht *
+oha_tpht_create(const struct oha_tpht_config * const config)
 {
     if (config == NULL) {
         return NULL;
@@ -75,7 +76,8 @@ OHA_PUBLIC_API struct oha_tpht * oha_tpht_create(const struct oha_tpht_config * 
     return table;
 }
 
-OHA_PUBLIC_API int8_t oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, uint32_t num_elements, bool resizable)
+OHA_PUBLIC_API int8_t
+oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, uint32_t num_elements, bool resizable)
 {
     if (tpht == NULL) {
         return -1;
@@ -115,7 +117,8 @@ OHA_PUBLIC_API int8_t oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, in
     return tpht->num_timeout_slots;
 }
 
-OHA_PUBLIC_API void oha_tpht_destroy(struct oha_tpht * const tpht)
+OHA_PUBLIC_API void
+oha_tpht_destroy(struct oha_tpht * const tpht)
 {
     if (tpht == NULL) {
         return;
@@ -133,19 +136,21 @@ OHA_PUBLIC_API void oha_tpht_destroy(struct oha_tpht * const tpht)
     oha_free(&tpht->lpht_config.memory, tpht);
 }
 
-OHA_PUBLIC_API bool oha_tpht_increase_global_time(struct oha_tpht * const tpht, int64_t timestamp)
+OHA_PUBLIC_API int
+oha_tpht_increase_global_time(struct oha_tpht * const tpht, int64_t timestamp)
 {
     if (tpht == NULL) {
-        return false;
+        return -1;
     }
     if (timestamp < tpht->last_timestamp) {
-        return false;
+        return 1;
     }
     tpht->last_timestamp = timestamp;
-    return true;
+    return 0;
 }
 
-OHA_PUBLIC_API void * oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uint8_t timeout_slot_id)
+OHA_PUBLIC_API void *
+oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uint8_t timeout_slot_id)
 {
     if (tpht == NULL) {
         return NULL;
@@ -176,7 +181,8 @@ OHA_PUBLIC_API void * oha_tpht_insert(struct oha_tpht * const tpht, const void *
     return hash_table_value->data;
 }
 
-OHA_PUBLIC_API void * oha_tpht_look_up(const struct oha_tpht * const tpht, const void * const key)
+OHA_PUBLIC_API void *
+oha_tpht_look_up(const struct oha_tpht * const tpht, const void * const key)
 {
     if (tpht == NULL) {
         return NULL;
@@ -188,7 +194,8 @@ OHA_PUBLIC_API void * oha_tpht_look_up(const struct oha_tpht * const tpht, const
     return value->data;
 }
 
-OHA_PUBLIC_API void * oha_tpht_remove(struct oha_tpht * const tpht, const void * const key)
+OHA_PUBLIC_API void *
+oha_tpht_remove(struct oha_tpht * const tpht, const void * const key)
 {
     if (tpht == NULL) {
         return NULL;
@@ -214,9 +221,10 @@ OHA_PUBLIC_API void * oha_tpht_remove(struct oha_tpht * const tpht, const void *
     return value->data;
 }
 
-OHA_PUBLIC_API size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
-                                     struct oha_key_value_pair * const next_pair,
-                                     size_t num_pairs)
+OHA_PUBLIC_API size_t
+oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
+                              struct oha_key_value_pair * const next_pair,
+                              size_t num_pairs)
 {
     if (tpht == NULL || next_pair == NULL) {
         return 0;
@@ -252,7 +260,8 @@ OHA_PUBLIC_API size_t oha_tpht_next_timeout_entries(struct oha_tpht * const tpht
     return num_found_entries;
 }
 
-OHA_PUBLIC_API void * oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void * const key, int64_t new_timestamp)
+OHA_PUBLIC_API void *
+oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void * const key, int64_t new_timestamp)
 {
 
     if (tpht == NULL) {
@@ -280,7 +289,8 @@ OHA_PUBLIC_API void * oha_tpht_update_time_for_entry(struct oha_tpht * const tph
     return NULL;
 }
 
-OHA_PUBLIC_API void * oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t new_slot)
+OHA_PUBLIC_API void *
+oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t new_slot)
 {
     if (tpht == NULL) {
         return NULL;

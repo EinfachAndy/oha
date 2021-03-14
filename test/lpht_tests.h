@@ -2,15 +2,18 @@
 #define LOAF_FACTOR 0.9
 
 /* Is run before every test, put unit init calls here. */
-void setUp(void)
+void
+setUp(void)
 {
 }
 /* Is run after every test, put unit clean-up calls here. */
-void tearDown(void)
+void
+tearDown(void)
 {
 }
 
-void test_create_destroy()
+void
+test_create_destroy()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
@@ -23,7 +26,8 @@ void test_create_destroy()
     oha_lpht_destroy(table);
 }
 
-void test_insert_look_up()
+void
+test_insert_look_up()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
@@ -46,7 +50,7 @@ void test_insert_look_up()
         }
 
         struct oha_lpht_status status = {0};
-        TEST_ASSERT_TRUE(oha_lpht_get_status(table, &status));
+        TEST_ASSERT_EQUAL(0, oha_lpht_get_status(table, &status));
         TEST_ASSERT_EQUAL_UINT64(i, status.elems_in_use);
         TEST_ASSERT_EQUAL_UINT64(config.max_elems, status.max_elems);
 
@@ -57,7 +61,7 @@ void test_insert_look_up()
         TEST_ASSERT_EQUAL_PTR(value_insert, value_lool_up);
         TEST_ASSERT_EQUAL_UINT64(*value_lool_up, i);
 
-        TEST_ASSERT_TRUE(oha_lpht_get_status(table, &status));
+        TEST_ASSERT_EQUAL(0, oha_lpht_get_status(table, &status));
         TEST_ASSERT_EQUAL_UINT64(i + 1, status.elems_in_use);
         TEST_ASSERT_EQUAL_UINT64(config.max_elems, status.max_elems);
     }
@@ -74,7 +78,8 @@ void test_insert_look_up()
     oha_lpht_destroy(table);
 }
 
-void test_insert_look_up_remove()
+void
+test_insert_look_up_remove()
 {
     for (size_t elems = 1; elems < 500; elems++) {
 
@@ -116,7 +121,8 @@ void test_insert_look_up_remove()
     }
 }
 
-void test_insert_look_up_resize()
+void
+test_insert_look_up_resize()
 {
     const size_t iterations = 500;
     for (size_t elems = 1; elems < iterations; elems++) {
@@ -148,7 +154,8 @@ void test_insert_look_up_resize()
     }
 }
 
-void test_clear_remove()
+void
+test_clear_remove()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
@@ -166,23 +173,24 @@ void test_clear_remove()
         *value_insert = i;
     }
 
-    oha_lpht_clear(table);
+    TEST_ASSERT_EQUAL(0, oha_lpht_clear(table));
 
     struct oha_key_value_pair pair = {0};
     for (uint64_t i = 1; i <= config.max_elems; i++) {
-        TEST_ASSERT(oha_lpht_get_next_element_to_remove(table, &pair));
+        TEST_ASSERT_EQUAL(0, oha_lpht_get_next_element_to_remove(table, &pair));
         TEST_ASSERT_NOT_NULL(pair.key);
         TEST_ASSERT_NOT_NULL(pair.value);
         TEST_ASSERT(*(uint64_t *)pair.value > 0);
         TEST_ASSERT(*(uint64_t *)pair.value <= 100);
     }
 
-    TEST_ASSERT(oha_lpht_get_next_element_to_remove(table, &pair) == false);
+    TEST_ASSERT_EQUAL(1, oha_lpht_get_next_element_to_remove(table, &pair));
 
     oha_lpht_destroy(table);
 }
 
-int main(void)
+int
+main(void)
 {
     UNITY_BEGIN();
 

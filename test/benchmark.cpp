@@ -1,13 +1,24 @@
 #include <assert.h>
 #include <iostream>
 #include <stdint.h>
+#include <cstring>
+
 #include <unordered_map>
+#include <flat_hash_map.hpp>
 
 #include "oha.h"
+
+typedef ska::flat_hash_map<int64_t, struct value, ska::power_of_two_std_hash<int64_t> > ska_power_of_two;
+typedef ska::flat_hash_map<int64_t, struct value, std::hash<int64_t> > ska_std_hash;
 
 using namespace std;
 
 #define MAX_ELEMENTS 250000
+
+struct value {
+    // use different sizes of value structure to measure performance
+    uint64_t array[1];
+};
 
 enum command {
     INVALID,
@@ -16,7 +27,8 @@ enum command {
     REMOVE,
 };
 
-enum command get_cmd(char * line, size_t length, uint64_t & key)
+enum command
+get_cmd(char * line, size_t length, uint64_t & key)
 {
     if (length > 0) {
         switch (line[0]) {
@@ -39,12 +51,8 @@ enum command get_cmd(char * line, size_t length, uint64_t & key)
     return INVALID;
 }
 
-struct value {
-    // use different sizes of value structure to measure performance
-    uint64_t array[1];
-};
-
-int main(int argc, char * argv[])
+int
+main(int argc, char * argv[])
 {
     if (argc != 3) {
         fprintf(stderr,
@@ -56,6 +64,7 @@ int main(int argc, char * argv[])
         return 1;
     }
     unordered_map<uint64_t, struct value> * umap = NULL;
+    ska_power_of_two * ska_power_of_tow = NULL;
     struct oha_lpht * table = NULL;
     char line_buf[5];
     size_t line_buf_size = 0;
@@ -80,6 +89,10 @@ int main(int argc, char * argv[])
         case 2:
             printf("create std::unordered_map\n");
             umap = new unordered_map<uint64_t, struct value>(MAX_ELEMENTS);
+            break;
+        case 3:
+            printf("create ska::power_of_two_std_hash\n");
+            ska_power_of_tow = new ska_power_of_two(MAX_ELEMENTS);
             break;
         default:
             fprintf(stderr, "unsupported mode %s\n", argv[2]);
@@ -109,33 +122,48 @@ int main(int argc, char * argv[])
                 struct value tmp;
                 tmp.array[0] = key;
                 switch (mode) {
-                    case 1:
+                    case 1: {
                         value = (struct value *)oha_lpht_insert(table, &key);
                         // crash if insert failed because of memory
-                        *value = tmp;
+                        memcpy(value, &tmp, sizeof(struct value));
                         break;
-                    case 2:
+                    }
+                    case 2: {
                         pair<uint64_t, struct value> tmp_pair(key, tmp);
                         umap->insert(tmp_pair);
                         break;
+                    }
+                    case 3: {
+                        pair<uint64_t, struct value> tmp_pair(key, tmp);
+                        ska_power_of_tow->insert(tmp_pair);
+                        break;
+                    }
                 }
                 inserts++;
                 break;
             case LOOKUP:
                 // printf("lookup: %lu\n", key);
                 switch (mode) {
-                    case 1:
+                    case 1: {
                         value = (struct value *)oha_lpht_look_up(table, &key);
                         if (value == NULL) {
                             exit(1);
                         }
                         break;
-                    case 2:
+                    }
+                    case 2: {
                         unordered_map<uint64_t, struct value>::const_iterator got = umap->find(key);
                         if (got == umap->end()) {
                             exit(2);
                         }
                         break;
+                    }
+                    case 3: {
+                        if (ska_power_of_tow->find(key) == ska_power_of_tow->end()) {
+                            exit(3);
+                        }
+                        break;
+                    }
                 }
                 lookups++;
                 break;
@@ -148,6 +176,9 @@ int main(int argc, char * argv[])
                     case 2:
                         umap->erase(key);
                         break;
+                    case 3:
+                        ska_power_of_tow->erase(key);
+                        break;
                 }
                 removes++;
                 break;
@@ -159,6 +190,7 @@ int main(int argc, char * argv[])
     printf("test:\n -inserts:\t%lu\n -look ups:\t%lu\n -removes:\t%lu\n", inserts, lookups, removes);
 EXIT:
     delete umap;
+    delete ska_power_of_tow;
     oha_lpht_destroy(table);
 
     /* Close the file now that we are done with it */

@@ -65,7 +65,7 @@ if(${BUILD_SHARED_LIB})
                                                 SOVERSION ${VERSION_MAJOR})
     install(TARGETS ${LIBNAME}
             LIBRARY
-            DESTINATION ${LIBNAME}
+            DESTINATION lib/${LIBNAME}
             COMPONENT lib)
 endif()
 
@@ -75,7 +75,7 @@ target_link_libraries(${LIBNAME}_static PUBLIC ${OHA_LINK_LIBS})
 target_include_directories(${LIBNAME}_static PUBLIC ${PROJECT_SOURCE_DIR})
 install(TARGETS ${LIBNAME}_static
         ARCHIVE
-        DESTINATION ${LIBNAME}
+        DESTINATION lib/${LIBNAME}
         COMPONENT lib)
 
 # header install command
@@ -84,7 +84,7 @@ install(FILES   "${PROJECT_SOURCE_DIR}/oha.h"
                 "${PROJECT_SOURCE_DIR}/oha_binary_heap_impl.h"
                 "${PROJECT_SOURCE_DIR}/oha_linear_probing_hash_table_impl.h"
                 "${PROJECT_SOURCE_DIR}/oha_temporal_prioritized_hash_table_impl.h"
-        DESTINATION ${LIBNAME}
+        DESTINATION include/${LIBNAME}
         COMPONENT dev)
 
 include(CTest)

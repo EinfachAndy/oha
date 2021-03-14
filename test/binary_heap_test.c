@@ -5,18 +5,21 @@
 #include "oha.h"
 
 /* Is run before every test, put unit init calls here. */
-void setUp(void)
+void
+setUp(void)
 {
     unsigned int seed = time(NULL);
     srand(seed);
     fprintf(stderr, "pseudo-random number: %u\n", seed);
 }
 /* Is run after every test, put unit clean-up calls here. */
-void tearDown(void)
+void
+tearDown(void)
 {
 }
 
-int compare_int64_t(const void * a, const void * b)
+int
+compare_int64_t(const void * a, const void * b)
 {
     int64_t int_a = *((int64_t *)a);
     int64_t int_b = *((int64_t *)b);
@@ -25,7 +28,8 @@ int compare_int64_t(const void * a, const void * b)
     return (int_a > int_b) - (int_a < int_b);
 }
 
-static int64_t * get_random_array(size_t num_elems, unsigned int bound)
+static int64_t *
+get_random_array(size_t num_elems, unsigned int bound)
 {
     int64_t * array = calloc(sizeof(uint64_t), num_elems);
     if (array == NULL) {
@@ -39,7 +43,8 @@ static int64_t * get_random_array(size_t num_elems, unsigned int bound)
     return array;
 }
 
-void test_create_destroy()
+void
+test_create_destroy()
 {
     struct oha_bh_config config = {0};
     config.value_size = 0;
@@ -49,7 +54,8 @@ void test_create_destroy()
     oha_bh_destroy(heap);
 }
 
-void test_insert_delete_min()
+void
+test_insert_delete_min()
 {
     const size_t array_size = 100 * 1000;
     struct oha_bh_config config = {0};
@@ -78,7 +84,8 @@ void test_insert_delete_min()
     free(big_rand_array);
 }
 
-void test_insert_delete_min_check_value_ptr()
+void
+test_insert_delete_min_check_value_ptr()
 {
     const size_t array_size = 10 * 1;
     struct oha_bh_config config = {0};
@@ -118,7 +125,8 @@ void test_insert_delete_min_check_value_ptr()
     free(big_rand_array);
 }
 
-void test_insert_delete_min_resizable()
+void
+test_insert_delete_min_resizable()
 {
     const size_t array_size = 10000;
     struct oha_bh_config config = {0};
@@ -156,7 +164,8 @@ void test_insert_delete_min_resizable()
     free(big_rand_array);
 }
 
-void test_decrease_key()
+void
+test_decrease_key()
 {
     const size_t array_size = 5;
     struct oha_bh_config config = {0};
@@ -212,7 +221,8 @@ void test_decrease_key()
     oha_bh_destroy(heap);
 }
 
-void test_increase_key()
+void
+test_increase_key()
 {
     const size_t array_size = 80;
     struct oha_bh_config config = {0};
@@ -255,7 +265,8 @@ void test_increase_key()
     oha_bh_destroy(heap);
 }
 
-int main(void)
+int
+main(void)
 {
     UNITY_BEGIN();
 
