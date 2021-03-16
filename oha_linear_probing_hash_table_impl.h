@@ -124,7 +124,8 @@ oha_lpht_calculate_configuration(struct oha_lpht_config * const config, struct s
     }
 
     // TODO support zero value size as hash set
-    if (config->max_elems == 0 || config->value_size == 0 || config->load_factor <= 0.0 || config->load_factor >= 1.0) {
+    if (config->max_elems == 0 || config->value_size == 0 || config->max_load_factor <= 0.0 ||
+        config->max_load_factor >= 1.0) {
         return -2;
     }
 
@@ -133,7 +134,7 @@ oha_lpht_calculate_configuration(struct oha_lpht_config * const config, struct s
     }
 
     // TODO add overflow checks
-    values->max_indicies = ceil((1 / config->load_factor) * config->max_elems) + 1;
+    values->max_indicies = ceil((1 / config->max_load_factor) * config->max_elems) + 1;
     config->value_size = OHA_ALIGN_UP(config->value_size);
     values->key_bucket_size = OHA_ALIGN_UP(sizeof(struct oha_lpht_key_bucket) + config->key_size);
     values->hash_table_size_keys = values->key_bucket_size * values->max_indicies;
@@ -474,6 +475,7 @@ oha_lpht_get_status(const struct oha_lpht * const table, struct oha_lpht_status 
     status->elems_in_use = table->elems;
     status->size_in_bytes =
         table->storage.hash_table_size_keys + table->storage.hash_table_size_values + sizeof(struct oha_lpht);
+    status->current_load_factor = table->elems / table->storage.max_indicies;
     return 0;
 }
 

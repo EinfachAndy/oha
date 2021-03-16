@@ -41,7 +41,7 @@ struct oha_memory_fp {
 struct oha_lpht;
 
 struct oha_lpht_config {
-    double load_factor;
+    double max_load_factor;
     struct oha_memory_fp memory;
     size_t key_size;
     size_t value_size;
@@ -53,6 +53,7 @@ struct oha_lpht_status {
     uint32_t max_elems;
     uint32_t elems_in_use;
     size_t size_in_bytes;
+    double current_load_factor;
 };
 
 OHA_PUBLIC_API struct oha_lpht *

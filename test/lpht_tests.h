@@ -17,7 +17,7 @@ test_create_destroy()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
-    config.load_factor = LOAF_FACTOR;
+    config.max_load_factor = LOAF_FACTOR;
     config.key_size = sizeof(uint64_t);
     config.value_size = sizeof(uint64_t);
     config.max_elems = 100;
@@ -31,7 +31,7 @@ test_insert_look_up()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
-    config.load_factor = LOAF_FACTOR;
+    config.max_load_factor = LOAF_FACTOR;
     config.key_size = sizeof(uint64_t);
     config.value_size = sizeof(uint64_t);
     config.max_elems = 100;
@@ -85,7 +85,7 @@ test_insert_look_up_remove()
 
         struct oha_lpht_config config;
         memset(&config, 0, sizeof(config));
-        config.load_factor = LOAF_FACTOR;
+        config.max_load_factor = LOAF_FACTOR;
         config.key_size = sizeof(uint64_t);
         config.value_size = sizeof(uint64_t);
         config.max_elems = elems;
@@ -129,7 +129,7 @@ test_insert_look_up_resize()
 
         struct oha_lpht_config config;
         memset(&config, 0, sizeof(config));
-        config.load_factor = LOAF_FACTOR;
+        config.max_load_factor = LOAF_FACTOR;
         config.key_size = sizeof(uint64_t);
         config.value_size = sizeof(uint64_t);
         config.max_elems = elems;
@@ -159,7 +159,7 @@ test_clear_remove()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
-    config.load_factor = LOAF_FACTOR;
+    config.max_load_factor = LOAF_FACTOR;
     config.key_size = sizeof(uint64_t);
     config.value_size = sizeof(uint64_t);
     config.max_elems = 100;

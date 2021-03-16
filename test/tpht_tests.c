@@ -23,7 +23,7 @@ test_create_destroy()
 {
     struct oha_lpht_config config_lpht;
     memset(&config_lpht, 0, sizeof(config_lpht));
-    config_lpht.load_factor = LOAF_FACTOR;
+    config_lpht.max_load_factor = LOAF_FACTOR;
     config_lpht.key_size = sizeof(uint64_t);
     config_lpht.value_size = sizeof(uint64_t);
     config_lpht.max_elems = 100;
@@ -40,7 +40,7 @@ test_create_destroy_add_slot()
 {
     struct oha_lpht_config config_lpht;
     memset(&config_lpht, 0, sizeof(config_lpht));
-    config_lpht.load_factor = LOAF_FACTOR;
+    config_lpht.max_load_factor = LOAF_FACTOR;
     config_lpht.key_size = sizeof(uint64_t);
     config_lpht.value_size = sizeof(uint64_t);
     config_lpht.max_elems = 100;
@@ -65,7 +65,7 @@ test_set_timeout_slot()
 
     struct oha_lpht_config config_lpht;
     memset(&config_lpht, 0, sizeof(config_lpht));
-    config_lpht.load_factor = LOAF_FACTOR;
+    config_lpht.max_load_factor = LOAF_FACTOR;
     config_lpht.key_size = sizeof(uint64_t);
     config_lpht.value_size = sizeof(uint64_t);
     config_lpht.max_elems = num_timeouts;
@@ -156,7 +156,7 @@ test_simple_insert_look_up_remove()
 
         struct oha_tpht_config config;
         memset(&config, 0, sizeof(config));
-        config.lpht_config.load_factor = LOAF_FACTOR;
+        config.lpht_config.max_load_factor = LOAF_FACTOR;
         config.lpht_config.key_size = sizeof(uint64_t);
         config.lpht_config.value_size = sizeof(uint64_t);
         config.lpht_config.max_elems = elems;
@@ -201,7 +201,7 @@ test_insert_look_up_remove_with_timeout_slot()
 
         struct oha_tpht_config config;
         memset(&config, 0, sizeof(config));
-        config.lpht_config.load_factor = LOAF_FACTOR;
+        config.lpht_config.max_load_factor = LOAF_FACTOR;
         config.lpht_config.key_size = sizeof(uint64_t);
         config.lpht_config.value_size = sizeof(uint64_t);
         config.lpht_config.max_elems = elems;
@@ -248,7 +248,7 @@ test_insert_look_up_timeout()
 
         struct oha_tpht_config config;
         memset(&config, 0, sizeof(config));
-        config.lpht_config.load_factor = LOAF_FACTOR;
+        config.lpht_config.max_load_factor = LOAF_FACTOR;
         config.lpht_config.key_size = sizeof(uint64_t);
         config.lpht_config.value_size = sizeof(uint64_t);
         config.lpht_config.max_elems = elems;
@@ -299,7 +299,7 @@ test_update_time_for_entry()
     struct oha_key_value_pair next_pairs[num_timeouts];
     struct oha_tpht_config config;
     memset(&config, 0, sizeof(config));
-    config.lpht_config.load_factor = LOAF_FACTOR;
+    config.lpht_config.max_load_factor = LOAF_FACTOR;
     config.lpht_config.key_size = sizeof(uint64_t);
     config.lpht_config.value_size = sizeof(uint64_t);
     config.lpht_config.max_elems = num_timeouts;
