@@ -71,6 +71,8 @@ oha_lpht_remove(struct oha_lpht * table, const void * key);
 OHA_PUBLIC_API int
 oha_lpht_get_status(const struct oha_lpht * table, struct oha_lpht_status * status);
 OHA_PUBLIC_API int
+oha_lpht_reserve(struct oha_lpht * table, size_t elements);
+OHA_PUBLIC_API int
 oha_lpht_clear(struct oha_lpht * table);
 OHA_PUBLIC_API int
 oha_lpht_get_next_element_to_remove(struct oha_lpht * table, struct oha_key_value_pair * pair);
@@ -140,6 +142,7 @@ oha_tpht_update_time_for_entry(struct oha_tpht * tpht, const void * key, int64_t
 
 // include all code as static inline functions
 #ifdef OHA_INLINE_ALL
+// include order must be done in this order!
 #include "oha_binary_heap_impl.h"
 #include "oha_linear_probing_hash_table_impl.h"
 #include "oha_temporal_prioritized_hash_table_impl.h"
