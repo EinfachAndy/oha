@@ -334,66 +334,77 @@ oha_tpht_set_timeout_slot_int(struct oha_tpht * tpht, const void * key, uint8_t 
 OHA_PUBLIC_API struct oha_tpht *
 oha_tpht_create(const struct oha_tpht_config * const config)
 {
-
+#if OHA_NULL_POINTER_CHECKS
     if (config == NULL) {
         return NULL;
     }
+#endif
     return oha_tpht_create_int(config);
 }
 
 OHA_PUBLIC_API int8_t
 oha_tpht_add_timeout_slot(struct oha_tpht * const tpht, int64_t timeout, uint32_t num_elements, bool resizable)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL) {
         return -1;
     }
-
+#endif
     return oha_tpht_add_timeout_slot_int(tpht, timeout, num_elements, resizable);
 }
 
 OHA_PUBLIC_API void
 oha_tpht_destroy(struct oha_tpht * const tpht)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL) {
         return;
     }
+#endif
     oha_tpht_destroy_int(tpht);
 }
 
 OHA_PUBLIC_API int
 oha_tpht_increase_global_time(struct oha_tpht * const tpht, int64_t timestamp)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL) {
         return -1;
     }
+#endif
     return oha_tpht_increase_global_time_int(tpht, timestamp);
 }
 
 OHA_PUBLIC_API void *
 oha_tpht_insert(struct oha_tpht * const tpht, const void * const key, uint8_t timeout_slot_id)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL || key == NULL) {
         return NULL;
     }
+#endif
     return oha_tpht_insert_int(tpht, key, timeout_slot_id);
 }
 
 OHA_PUBLIC_API void *
 oha_tpht_look_up(const struct oha_tpht * const tpht, const void * const key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL || key == NULL) {
         return NULL;
     }
+#endif
     return oha_tpht_look_up_int(tpht, key);
 }
 
 OHA_PUBLIC_API void *
 oha_tpht_remove(struct oha_tpht * const tpht, const void * const key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL || key == NULL) {
         return NULL;
     }
-
+#endif
     return oha_tpht_remove_int(tpht, key);
 }
 
@@ -402,30 +413,33 @@ oha_tpht_next_timeout_entries(struct oha_tpht * const tpht,
                               struct oha_key_value_pair * const next_pair,
                               size_t num_pairs)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL || next_pair == NULL) {
         return 0;
     }
-
+#endif
     return oha_tpht_next_timeout_entries_int(tpht, next_pair, num_pairs);
 }
 
 OHA_PUBLIC_API void *
 oha_tpht_update_time_for_entry(struct oha_tpht * const tpht, const void * const key, int64_t new_timestamp)
 {
-
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL || key == NULL) {
         return NULL;
     }
-
+#endif
     return oha_tpht_update_time_for_entry_int(tpht, key, new_timestamp);
 }
 
 OHA_PUBLIC_API void *
 oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t new_slot)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (tpht == NULL) {
         return NULL;
     }
+#endif
     return oha_tpht_set_timeout_slot_int(tpht, key, new_slot);
 }
 

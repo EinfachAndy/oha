@@ -496,18 +496,22 @@ oha_lpht_get_status_int(const struct oha_lpht * const table, struct oha_lpht_sta
 OHA_PUBLIC_API void
 oha_lpht_destroy(struct oha_lpht * const table)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL) {
         return;
     }
+#endif
     oha_lpht_destroy_int(table);
 }
 
 OHA_PUBLIC_API struct oha_lpht *
 oha_lpht_create(const struct oha_lpht_config * const config)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (config == NULL) {
         return NULL;
     }
+#endif
     return oha_lpht_create_int(config);
 }
 
@@ -515,9 +519,11 @@ oha_lpht_create(const struct oha_lpht_config * const config)
 OHA_PUBLIC_API void *
 oha_lpht_look_up(const struct oha_lpht * const table, const void * const key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL || key == NULL) {
         return NULL;
     }
+#endif
     return oha_lpht_look_up_int(table, key);
 }
 
@@ -525,45 +531,55 @@ oha_lpht_look_up(const struct oha_lpht * const table, const void * const key)
 OHA_PUBLIC_API void *
 oha_lpht_insert(struct oha_lpht * const table, const void * const key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL || key == NULL) {
         return NULL;
     }
+#endif
     return oha_lpht_insert_int(table, key);
 }
 
 OHA_PUBLIC_API int
 oha_lpht_reserve(struct oha_lpht * const table, size_t elements)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL) {
         return -1;
     }
+#endif
     return oha_lpht_reserve_int(table, elements);
 }
 
 OHA_PUBLIC_API void *
 oha_lpht_get_key_from_value(const void * const value)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (value == NULL) {
         return NULL;
     }
+#endif
     return oha_lpht_get_key_from_value_int(value);
 }
 
 OHA_PUBLIC_API int
 oha_lpht_clear(struct oha_lpht * const table)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL) {
         return -1;
     }
+#endif
     return oha_lpht_clear_int(table);
 }
 
 OHA_PUBLIC_API int
 oha_lpht_get_next_element_to_remove(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL || pair == NULL) {
         return -1;
     }
+#endif
     return oha_lpht_get_next_element_to_remove_int(table, pair);
 }
 
@@ -571,18 +587,22 @@ oha_lpht_get_next_element_to_remove(struct oha_lpht * const table, struct oha_ke
 OHA_PUBLIC_API void *
 oha_lpht_remove(struct oha_lpht * const table, const void * const key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL || key == NULL) {
         return NULL;
     }
+#endif
     return oha_lpht_remove_int(table, key);
 }
 
 OHA_PUBLIC_API int
 oha_lpht_get_status(const struct oha_lpht * const table, struct oha_lpht_status * const status)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (table == NULL || status == NULL) {
         return -1;
     }
+#endif
     return oha_lpht_get_status_int(table, status);
 }
 

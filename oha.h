@@ -16,6 +16,12 @@ extern "C" {
 #define OHA_PUBLIC_API
 #endif
 
+#ifdef OHA_DISABLE_NULL_POINTER_CHECKS
+#define OHA_NULL_POINTER_CHECKS 0
+#else
+#define OHA_NULL_POINTER_CHECKS 1
+#endif
+
 struct oha_key_value_pair {
     void * key;
     void * value;

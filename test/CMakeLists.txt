@@ -47,6 +47,6 @@ add_executable(benchmark_static benchmark.cpp)
 target_link_libraries(benchmark_static ${LIBNAME}_static)
 
 add_executable(benchmark_static_inline EXCLUDE_FROM_ALL benchmark.cpp)
-target_compile_definitions(benchmark_static_inline PRIVATE -DOHA_INLINE_ALL)
+target_compile_definitions(benchmark_static_inline PRIVATE -DOHA_INLINE_ALL -DOHA_DISABLE_NULL_POINTER_CHECKS)
 target_compile_options(benchmark_static_inline PRIVATE -fpermissive)
 target_include_directories(benchmark_static_inline PRIVATE ${PROJECT_SOURCE_DIR})

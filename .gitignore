@@ -1,8 +1,12 @@
 /build*
 
+# generated files
+/test/benchmark.out
+
 # eclipse
 /.settings
 /.cproject
 /.project
 /.autotools
 /.pydevproject
+/.clang-format

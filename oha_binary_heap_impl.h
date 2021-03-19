@@ -365,70 +365,77 @@ oha_bh_change_key_int(struct oha_bh * const heap, void * const value, int64_t ne
 OHA_PUBLIC_API struct oha_bh *
 oha_bh_create(const struct oha_bh_config * const config)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (config == NULL) {
         return NULL;
     }
-
+#endif
     return oha_bh_create_int(config);
 }
 
 OHA_PUBLIC_API void
 oha_bh_destroy(struct oha_bh * const heap)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (heap == NULL) {
         return;
     }
-
+#endif
     oha_bh_destroy_int(heap);
 }
 
 OHA_PUBLIC_API void *
 oha_bh_insert(struct oha_bh * const heap, int64_t key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (heap == NULL) {
         return NULL;
     }
-
+#endif
     return oha_bh_insert_int(heap, key);
 }
 
 OHA_PUBLIC_API int64_t
 oha_bh_find_min(const struct oha_bh * const heap)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (heap == NULL) {
         return OHA_BH_NOT_FOUND;
     }
-
+#endif
     return oha_bh_find_min_int(heap);
 }
 
 OHA_PUBLIC_API void *
 oha_bh_delete_min(struct oha_bh * const heap)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (heap == NULL) {
         return NULL;
     }
-
+#endif
     return oha_bh_delete_min_int(heap);
 }
 
 OHA_PUBLIC_API void *
 oha_bh_remove(struct oha_bh * const heap, void * const value, int64_t * out_key)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (heap == NULL || value == NULL) {
         return NULL;
     }
-
+#endif
     return oha_bh_remove_int(heap, value, out_key);
 }
 
 OHA_PUBLIC_API int64_t
 oha_bh_change_key(struct oha_bh * const heap, void * const value, int64_t new_val)
 {
+#if OHA_NULL_POINTER_CHECKS
     if (heap == NULL || value == NULL) {
         return OHA_BH_NOT_FOUND;
     }
-
+#endif
     return oha_bh_change_key_int(heap, value, new_val);
 }
 
