@@ -12,6 +12,7 @@ OHA_0.1.0 {
     oha_lpht_get_status;
     oha_lpht_clear;
     oha_lpht_get_next_element_to_remove;
+    oha_lpht_reserve;
     
     # public API bh
     oha_bh_create;

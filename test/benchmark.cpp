@@ -5,20 +5,23 @@
 
 #include <unordered_map>
 #include <flat_hash_map.hpp>
+#include <google/dense_hash_map>
 
 #include "oha.h"
-
-typedef ska::flat_hash_map<int64_t, struct value, ska::power_of_two_std_hash<int64_t> > ska_power_of_two;
-typedef ska::flat_hash_map<int64_t, struct value, std::hash<int64_t> > ska_std_hash;
-
-using namespace std;
-
-#define MAX_ELEMENTS 250000
 
 struct value {
     // use different sizes of value structure to measure performance
     uint64_t array[1];
 };
+
+typedef ska::flat_hash_map<int64_t, struct value, ska::power_of_two_std_hash<int64_t> > ska_power_of_two;
+typedef ska::flat_hash_map<int64_t, struct value, std::hash<int64_t> > ska_std_hash;
+typedef google::dense_hash_map<int64_t, struct value, std::hash<int64_t> > google_dense_hash;
+
+using namespace std;
+
+#define MAX_ELEMENTS 250000
+
 
 enum command {
     INVALID,
@@ -65,6 +68,7 @@ main(int argc, char * argv[])
     }
     unordered_map<uint64_t, struct value> * umap = NULL;
     ska_power_of_two * ska_power_of_tow = NULL;
+    google_dense_hash * google_dense = NULL;
     struct oha_lpht * table = NULL;
     char line_buf[5];
     size_t line_buf_size = 0;
@@ -93,6 +97,12 @@ main(int argc, char * argv[])
         case 3:
             printf("create ska::power_of_two_std_hash\n");
             ska_power_of_tow = new ska_power_of_two(MAX_ELEMENTS);
+            break;
+        case 4:
+            printf("create googel::dense_hash_map\n");
+            google_dense = new google::dense_hash_map<int64_t, struct value, std::hash<int64_t> >(MAX_ELEMENTS);
+            google_dense->set_empty_key(-1);
+            google_dense->set_deleted_key(-2);
             break;
         default:
             fprintf(stderr, "unsupported mode %s\n", argv[2]);
@@ -138,6 +148,10 @@ main(int argc, char * argv[])
                         ska_power_of_tow->insert(tmp_pair);
                         break;
                     }
+                    case 4: {
+                        google_dense->insert(google_dense_hash::value_type(key, tmp));
+                        break;
+                    }
                 }
                 inserts++;
                 break;
@@ -164,6 +178,12 @@ main(int argc, char * argv[])
                         }
                         break;
                     }
+                    case 4: {
+                        if (google_dense->find(key) == google_dense->end()) {
+                            exit(3);
+                        }
+                        break;
+                    }
                 }
                 lookups++;
                 break;
@@ -179,6 +199,9 @@ main(int argc, char * argv[])
                     case 3:
                         ska_power_of_tow->erase(key);
                         break;
+                    case 4:
+                        google_dense->erase(key);
+                        break;
                 }
                 removes++;
                 break;
@@ -189,10 +212,12 @@ main(int argc, char * argv[])
 
     printf("test:\n -inserts:\t%lu\n -look ups:\t%lu\n -removes:\t%lu\n", inserts, lookups, removes);
 EXIT:
+    delete google_dense;
     delete umap;
     delete ska_power_of_tow;
-    oha_lpht_destroy(table);
-
+    if (table) {
+        oha_lpht_destroy(table);
+    }
     /* Close the file now that we are done with it */
     fclose(fp);
 

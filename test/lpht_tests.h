@@ -155,6 +155,38 @@ test_insert_look_up_resize()
 }
 
 void
+test_resize_stress_test()
+{
+    struct oha_lpht_config config;
+    memset(&config, 0, sizeof(config));
+    config.max_load_factor = 0.6;
+    config.key_size = sizeof(uint64_t);
+    config.value_size = sizeof(uint64_t);
+    config.max_elems = 1;
+    config.resizable = true;
+
+    struct oha_lpht * table = oha_lpht_create(&config);
+    TEST_ASSERT_NOT_NULL(table);
+
+    for (uint64_t i = 0; i < 1000 * 1000; i++) {
+        uint64_t * value_insert = oha_lpht_insert(table, &i);
+        if (value_insert == NULL) {
+            fprintf(stderr, "inserted: %lu\n", i);
+        }
+        TEST_ASSERT_NOT_NULL(value_insert);
+        *value_insert = i;
+    }
+
+    for (uint64_t i = 0; i < 1000 * 1000; i++) {
+        uint64_t * look_up = oha_lpht_look_up(table, &i);
+        TEST_ASSERT_NOT_NULL(look_up);
+        *look_up = i;
+    }
+
+    oha_lpht_destroy(table);
+}
+
+void
 test_clear_remove()
 {
     struct oha_lpht_config config;
@@ -189,6 +221,37 @@ test_clear_remove()
     oha_lpht_destroy(table);
 }
 
+void
+test_reserve_elemts()
+{
+    struct oha_lpht_config config;
+    memset(&config, 0, sizeof(config));
+    config.max_load_factor = LOAF_FACTOR;
+    config.key_size = sizeof(uint64_t);
+    config.value_size = sizeof(uint64_t);
+    config.max_elems = 1;
+    config.resizable = false;
+
+    struct oha_lpht * table = oha_lpht_create(&config);
+    TEST_ASSERT_NOT_NULL(table);
+
+    uint64_t key = 3;
+    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
+
+    key = 5;
+    TEST_ASSERT_NULL(oha_lpht_insert(table, &key));
+
+    TEST_ASSERT_EQUAL(0, oha_lpht_reserve(table, 3));
+    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
+    key = 7;
+    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
+
+    key = 9;
+    TEST_ASSERT_NULL(oha_lpht_insert(table, &key));
+
+    oha_lpht_destroy(table);
+}
+
 int
 main(void)
 {
@@ -199,6 +262,8 @@ main(void)
     RUN_TEST(test_insert_look_up);
     RUN_TEST(test_insert_look_up_remove);
     RUN_TEST(test_clear_remove);
+    RUN_TEST(test_reserve_elemts);
+    RUN_TEST(test_resize_stress_test);
 
     return UNITY_END();
 }

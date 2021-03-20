@@ -81,10 +81,16 @@ install(TARGETS ${LIBNAME}_static
 # header install command
 install(FILES   "${PROJECT_SOURCE_DIR}/oha.h"
                 "${PROJECT_SOURCE_DIR}/oha_fast.h"
-                "${PROJECT_SOURCE_DIR}/oha_binary_heap_impl.h"
-                "${PROJECT_SOURCE_DIR}/oha_linear_probing_hash_table_impl.h"
-                "${PROJECT_SOURCE_DIR}/oha_temporal_prioritized_hash_table_impl.h"
+                "${PROJECT_SOURCE_DIR}/oha_utils.h"
+                "${PROJECT_SOURCE_DIR}/oha_bh_impl.h"
+                "${PROJECT_SOURCE_DIR}/oha_lpht_impl.h"
+                "${PROJECT_SOURCE_DIR}/oha_tpht_impl.h"
         DESTINATION include/${LIBNAME}
+        COMPONENT dev)
+
+install(FILES   "${PROJECT_SOURCE_DIR}/xxHash/xxh3.h"
+                "${PROJECT_SOURCE_DIR}/xxHash/xxhash.h"
+        DESTINATION include/${LIBNAME}/xxHash
         COMPONENT dev)
 
 include(CTest)

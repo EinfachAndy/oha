@@ -214,10 +214,15 @@ i_oha_lpht_probify(struct oha_lpht * const table, struct oha_lpht_key_bucket * c
 }
 
 __attribute__((always_inline)) static inline int
-i_oha_lpht_resize_table(struct oha_lpht * const table)
+i_oha_lpht_resize(struct oha_lpht * const table, size_t max_elements)
 {
     if (!table->config.resizable) {
         return -1;
+    }
+
+    if (max_elements <= table->max_elems) {
+        // nothing todo
+        return 0;
     }
 
     const struct oha_memory_fp * memory = &table->config.memory;
@@ -227,8 +232,7 @@ i_oha_lpht_resize_table(struct oha_lpht * const table)
     }
 
     tmp_table->config = table->config;
-    // TODO add overflow check 32 bit
-    tmp_table->config.max_elems *= 2;
+    tmp_table->config.max_elems = max_elements;
 
     struct storage_info storage;
     if (i_oha_lpht_calculate_configuration(&tmp_table->config, &storage)) {
@@ -329,7 +333,8 @@ oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
     assert(table);
     assert(key);
     if (table->elems >= table->max_elems) {
-        if (i_oha_lpht_resize_table(table)) {
+        // double size table
+        if (i_oha_lpht_resize(table, 2 * table->max_elems)) {
             return NULL;
         }
     }
@@ -360,9 +365,13 @@ OHA_PUBLIC_API int
 oha_lpht_reserve_int(struct oha_lpht * const table, size_t elements)
 {
     assert(table);
-    (void)elements;
-    // TODO implement
-    return 0;
+
+    bool save_resize_mode = table->config.resizable;
+    table->config.resizable = true;
+    int retval = i_oha_lpht_resize(table, elements);
+    table->config.resizable = save_resize_mode;
+
+    return retval;
 }
 
 OHA_PUBLIC_API void *
@@ -384,10 +393,9 @@ OHA_PUBLIC_API int
 oha_lpht_clear_int(struct oha_lpht * const table)
 {
     assert(table);
-    if (!table->clear_mode_on) {
-        table->clear_mode_on = true;
-        table->current_bucket_to_clear = table->key_buckets;
-    }
+
+    table->clear_mode_on = true;
+    table->current_bucket_to_clear = table->key_buckets;
     return 0;
 }
 
@@ -483,7 +491,7 @@ oha_lpht_get_status_int(const struct oha_lpht * const table, struct oha_lpht_sta
     status->elems_in_use = table->elems;
     status->size_in_bytes =
         table->storage.hash_table_size_keys + table->storage.hash_table_size_values + sizeof(struct oha_lpht);
-    status->current_load_factor = table->elems / table->storage.max_indicies;
+    status->current_load_factor = (double)table->elems / (double)table->storage.max_indicies;
     return 0;
 }
 

@@ -149,9 +149,9 @@ oha_tpht_update_time_for_entry(struct oha_tpht * tpht, const void * key, int64_t
 // include all code as static inline functions
 #ifdef OHA_INLINE_ALL
 // include order must be done in this order!
-#include "oha_binary_heap_impl.h"
-#include "oha_linear_probing_hash_table_impl.h"
-#include "oha_temporal_prioritized_hash_table_impl.h"
+#include "oha_bh_impl.h"
+#include "oha_lpht_impl.h"
+#include "oha_tpht_impl.h"
 #endif
 
 #ifdef __cplusplus
