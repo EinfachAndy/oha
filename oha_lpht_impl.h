@@ -50,7 +50,7 @@ struct oha_lpht {
     OHA_LPHT_VALUE_BUCKET_TYPE * value_buckets;
     struct oha_lpht_key_bucket * key_buckets;
     struct oha_lpht_key_bucket * last_key_bucket;
-    struct oha_lpht_key_bucket * current_bucket_to_clear;
+    struct oha_lpht_key_bucket * iter; // state of the iterator
     struct storage_info storage;
     struct oha_lpht_config config;
     uint_fast32_t elems; // current number of inserted elements
@@ -59,7 +59,6 @@ struct oha_lpht {
      * number of hash table buckets, because of performance reasons. The ratio is configurable via the load factor.
      */
     uint_fast32_t max_elems;
-    bool clear_mode_on;
 };
 
 OHA_PUBLIC_API void
@@ -67,9 +66,9 @@ oha_lpht_destroy_int(struct oha_lpht * const table);
 OHA_PUBLIC_API void *
 oha_lpht_insert_int(struct oha_lpht * const table, const void * const key);
 OHA_PUBLIC_API int
-oha_lpht_clear_int(struct oha_lpht * const table);
+oha_lpht_iter_init_int(struct oha_lpht * const table);
 OHA_PUBLIC_API int
-oha_lpht_get_next_element_to_remove_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair);
+oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair);
 
 __attribute__((always_inline)) static inline void *
 i_oha_lpht_get_value(const struct oha_lpht_key_bucket * const bucket)
@@ -106,7 +105,7 @@ i_oha_lpht_get_next_bucket(const struct oha_lpht * const table, const struct oha
 {
     struct oha_lpht_key_bucket * current = oha_move_ptr_num_bytes(bucket, table->storage.key_bucket_size);
     // overflow, get to the first elem
-    if (current > table->last_key_bucket) {
+    if (OHA_UNLIKELY(current > table->last_key_bucket)) {
         current = table->key_buckets;
     }
     return current;
@@ -172,8 +171,7 @@ i_oha_lpht_init_table(const struct oha_lpht_config * const config,
     table->last_key_bucket =
         oha_move_ptr_num_bytes(table->key_buckets, table->storage.key_bucket_size * (table->storage.max_indicies - 1));
     table->max_elems = config->max_elems;
-    table->current_bucket_to_clear = NULL;
-    table->clear_mode_on = false;
+    table->iter = NULL;
 
     // connect hash buckets and value buckets
     struct oha_lpht_key_bucket * current_key_bucket = table->key_buckets;
@@ -244,10 +242,10 @@ i_oha_lpht_resize(struct oha_lpht * const table, size_t max_elements)
     }
 
     // copy elements
-    oha_lpht_clear_int(table);
+    oha_lpht_iter_init_int(table);
     struct oha_key_value_pair pair;
     for (uint64_t i = 0; i < table->max_elems; i++) {
-        if (oha_lpht_get_next_element_to_remove_int(table, &pair)) {
+        if (oha_lpht_iter_next_int(table, &pair)) {
             goto clean_up_and_error;
         }
         assert(pair.key != NULL);
@@ -332,7 +330,7 @@ oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
 {
     assert(table);
     assert(key);
-    if (table->elems >= table->max_elems) {
+    if (OHA_UNLIKELY(table->elems >= table->max_elems)) {
         // double size table
         if (i_oha_lpht_resize(table, 2 * table->max_elems)) {
             return NULL;
@@ -390,35 +388,34 @@ oha_lpht_get_key_from_value_int(const void * const value)
 }
 
 OHA_PUBLIC_API int
-oha_lpht_clear_int(struct oha_lpht * const table)
+oha_lpht_iter_init_int(struct oha_lpht * const table)
 {
     assert(table);
 
-    table->clear_mode_on = true;
-    table->current_bucket_to_clear = table->key_buckets;
+    table->iter = table->key_buckets;
     return 0;
 }
 
 OHA_PUBLIC_API int
-oha_lpht_get_next_element_to_remove_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
+oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
 {
     assert(table);
     assert(pair);
 
-    if (!table->clear_mode_on) {
+    if (table->iter == NULL) {
+        // iterator was not initialised
         return -2;
     }
 
     bool stop = false;
 
-    while (table->current_bucket_to_clear <= table->last_key_bucket) {
-        if (table->current_bucket_to_clear->is_occupied) {
-            pair->value = i_oha_lpht_get_value(table->current_bucket_to_clear);
-            pair->key = table->current_bucket_to_clear->key_buffer;
+    while (OHA_LIKELY(table->iter <= table->last_key_bucket)) {
+        if (table->iter->is_occupied) {
+            pair->key = table->iter->key_buffer;
+            pair->value = i_oha_lpht_get_value(table->iter);
             stop = true;
         }
-        table->current_bucket_to_clear =
-            oha_move_ptr_num_bytes(table->current_bucket_to_clear, table->storage.key_bucket_size);
+        table->iter = oha_move_ptr_num_bytes(table->iter, table->storage.key_bucket_size);
         if (stop == true) {
             break;
         }
@@ -570,25 +567,25 @@ oha_lpht_get_key_from_value(const void * const value)
 }
 
 OHA_PUBLIC_API int
-oha_lpht_clear(struct oha_lpht * const table)
+oha_lpht_iter_init(struct oha_lpht * const table)
 {
 #if OHA_NULL_POINTER_CHECKS
     if (table == NULL) {
         return -1;
     }
 #endif
-    return oha_lpht_clear_int(table);
+    return oha_lpht_iter_init_int(table);
 }
 
 OHA_PUBLIC_API int
-oha_lpht_get_next_element_to_remove(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
+oha_lpht_iter_next(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
 {
 #if OHA_NULL_POINTER_CHECKS
     if (table == NULL || pair == NULL) {
         return -1;
     }
 #endif
-    return oha_lpht_get_next_element_to_remove_int(table, pair);
+    return oha_lpht_iter_next_int(table, pair);
 }
 
 // return true if element was in the table

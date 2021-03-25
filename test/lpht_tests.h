@@ -205,18 +205,18 @@ test_clear_remove()
         *value_insert = i;
     }
 
-    TEST_ASSERT_EQUAL(0, oha_lpht_clear(table));
+    TEST_ASSERT_EQUAL(0, oha_lpht_iter_init(table));
 
     struct oha_key_value_pair pair = {0};
     for (uint64_t i = 1; i <= config.max_elems; i++) {
-        TEST_ASSERT_EQUAL(0, oha_lpht_get_next_element_to_remove(table, &pair));
+        TEST_ASSERT_EQUAL(0, oha_lpht_iter_next(table, &pair));
         TEST_ASSERT_NOT_NULL(pair.key);
         TEST_ASSERT_NOT_NULL(pair.value);
         TEST_ASSERT(*(uint64_t *)pair.value > 0);
         TEST_ASSERT(*(uint64_t *)pair.value <= 100);
     }
 
-    TEST_ASSERT_EQUAL(1, oha_lpht_get_next_element_to_remove(table, &pair));
+    TEST_ASSERT_EQUAL(1, oha_lpht_iter_next(table, &pair));
 
     oha_lpht_destroy(table);
 }

@@ -79,9 +79,9 @@ oha_lpht_get_status(const struct oha_lpht * table, struct oha_lpht_status * stat
 OHA_PUBLIC_API int
 oha_lpht_reserve(struct oha_lpht * table, size_t elements);
 OHA_PUBLIC_API int
-oha_lpht_clear(struct oha_lpht * table);
+oha_lpht_iter_init(struct oha_lpht * table);
 OHA_PUBLIC_API int
-oha_lpht_get_next_element_to_remove(struct oha_lpht * table, struct oha_key_value_pair * pair);
+oha_lpht_iter_next(struct oha_lpht * table, struct oha_key_value_pair * pair);
 
 /**********************************************************************************************************************
  *  binary heap (bh)

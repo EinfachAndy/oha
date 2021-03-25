@@ -18,6 +18,9 @@
 
 #define OHA_ALIGN_UP(_num) (((_num) + ((SIZE_T_WIDTH)-1)) & ~((SIZE_T_WIDTH)-1))
 
+#define OHA_LIKELY(x) __builtin_expect((x), 1)
+#define OHA_UNLIKELY(x) __builtin_expect((x), 0)
+
 __attribute__((always_inline)) static inline void *
 oha_move_ptr_num_bytes(const void * const ptr, size_t num_bytes)
 {
