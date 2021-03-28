@@ -19,6 +19,7 @@
 #pragma GCC pop_options
 
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
+#error "currently not implemented"
 struct oha_lpht_key_bucket;
 struct oha_lpht_value_bucket {
     struct oha_lpht_key_bucket * key;
@@ -32,9 +33,9 @@ struct oha_lpht_value_bucket {
 #endif
 
 struct oha_lpht_key_bucket {
-    OHA_LPHT_VALUE_BUCKET_TYPE * value;
-    uint32_t offset;
-    uint32_t is_occupied; // only one bit in usage, could be extend for future states
+    uint32_t value_bucket_number;
+    uint32_t offset : 31;
+    uint32_t is_occupied : 1; // TODO transfer bit field to one value of the offset
     // key buffer is always aligned on 32 bit and 64 bit architectures
     uint8_t key_buffer[];
 };
@@ -71,13 +72,9 @@ OHA_PUBLIC_API int
 oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair);
 
 __attribute__((always_inline)) static inline void *
-i_oha_lpht_get_value(const struct oha_lpht_key_bucket * const bucket)
+i_oha_lpht_get_value(const struct oha_lpht * const table, const struct oha_lpht_key_bucket * const bucket)
 {
-#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
-    return bucket->value->value_buffer;
-#else
-    return bucket->value;
-#endif
+    return oha_move_ptr_num_bytes(table->value_buckets, table->config.value_size * bucket->value_bucket_number);
 }
 
 // does not support overflow
@@ -116,12 +113,14 @@ i_oha_lpht_swap_bucket_values(struct oha_lpht_key_bucket * const restrict a,
                               struct oha_lpht_key_bucket * const restrict b)
 {
 #ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
-    a->value->key = b;
-    b->value->key = a;
+    OHA_LPHT_VALUE_BUCKET_TYPE * value_a = i_oha_lpht_get_value(table, a);
+    OHA_LPHT_VALUE_BUCKET_TYPE * value_b = i_oha_lpht_get_value(table, b);
+    value_a->key = b;
+    value_b->key = a;
 #endif
-    OHA_LPHT_VALUE_BUCKET_TYPE * tmp = a->value;
-    a->value = b->value;
-    b->value = tmp;
+    uint32_t tmp = a->value_bucket_number;
+    a->value_bucket_number = b->value_bucket_number;
+    b->value_bucket_number = tmp;
 }
 
 __attribute__((always_inline)) static inline int
@@ -177,12 +176,9 @@ i_oha_lpht_init_table(const struct oha_lpht_config * const config,
     struct oha_lpht_key_bucket * current_key_bucket = table->key_buckets;
     OHA_LPHT_VALUE_BUCKET_TYPE * current_value_bucket = table->value_buckets;
     for (size_t i = 0; i < table->storage.max_indicies; i++) {
-        current_key_bucket->value = current_value_bucket;
-#ifdef OHA_WITH_KEY_FROM_VALUE_SUPPORT
-        current_value_bucket->key = current_key_bucket;
-#endif
-        current_key_bucket = i_oha_lpht_get_next_bucket(table, current_key_bucket);
-        current_value_bucket = i_oha_lpht_get_next_value(table, current_value_bucket);
+        current_key_bucket->value_bucket_number = i;
+        current_key_bucket = oha_move_ptr_num_bytes(current_key_bucket, table->storage.key_bucket_size);
+        current_value_bucket = oha_move_ptr_num_bytes(current_value_bucket, table->config.value_size);
     }
     return table;
 }
@@ -317,7 +313,7 @@ oha_lpht_look_up_int(const struct oha_lpht * const table, const void * const key
     while (bucket->is_occupied) {
         // circle + length check
         if (memcmp(bucket->key_buffer, key, table->config.key_size) == 0) {
-            return i_oha_lpht_get_value(bucket);
+            return i_oha_lpht_get_value(table, bucket);
         }
         bucket = i_oha_lpht_get_next_bucket(table, bucket);
     }
@@ -344,7 +340,7 @@ oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
     while (bucket->is_occupied) {
         if (memcmp(bucket->key_buffer, key, table->config.key_size) == 0) {
             // already inserted
-            return i_oha_lpht_get_value(bucket);
+            return i_oha_lpht_get_value(table, bucket);
         }
         bucket = i_oha_lpht_get_next_bucket(table, bucket);
         offset++;
@@ -356,7 +352,7 @@ oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
     bucket->is_occupied = 1;
 
     table->elems++;
-    return i_oha_lpht_get_value(bucket);
+    return i_oha_lpht_get_value(table, bucket);
 }
 
 OHA_PUBLIC_API int
@@ -412,7 +408,7 @@ oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair 
     while (OHA_LIKELY(table->iter <= table->last_key_bucket)) {
         if (table->iter->is_occupied) {
             pair->key = table->iter->key_buffer;
-            pair->value = i_oha_lpht_get_value(table->iter);
+            pair->value = i_oha_lpht_get_value(table, table->iter);
             stop = true;
         }
         table->iter = oha_move_ptr_num_bytes(table->iter, table->storage.key_bucket_size);
@@ -460,7 +456,7 @@ oha_lpht_remove_int(struct oha_lpht * const table, const void * const key)
         current = i_oha_lpht_get_next_bucket(table, current);
     } while (current->is_occupied);
 
-    void * value = i_oha_lpht_get_value(bucket_to_remove);
+    void * value = i_oha_lpht_get_value(table, bucket_to_remove);
     if (collision != NULL) {
         // copy collision to the element to remove
         i_oha_lpht_swap_bucket_values(bucket_to_remove, collision);
