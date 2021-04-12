@@ -181,10 +181,14 @@ oha_tpht_look_up_int(const struct oha_tpht * const tpht, const void * const key)
     assert(tpht);
     assert(key);
 
-    struct oha_tpht_value_bucket * value = oha_lpht_look_up_int(tpht->lpht, key);
-    if (value == NULL) {
+    struct oha_tpht_value_bucket * value = NULL;
+    struct oha_lpht_key_bucket * bucket = oha_lpht_look_up_int(tpht->lpht, key);
+    if (bucket != NULL) {
+        value = i_oha_lpht_get_value(tpht->lpht, bucket);
+    } else {
         return NULL;
     }
+
     return value->data;
 }
 
@@ -265,8 +269,11 @@ oha_tpht_update_time_for_entry_int(struct oha_tpht * const tpht, const void * co
         return NULL;
     }
 
-    struct oha_tpht_value_bucket * value = oha_lpht_look_up_int(tpht->lpht, key);
-    if (value == NULL) {
+    struct oha_tpht_value_bucket * value = NULL;
+    struct oha_lpht_key_bucket * bucket = oha_lpht_look_up_int(tpht->lpht, key);
+    if (bucket != NULL) {
+        value = i_oha_lpht_get_value(tpht->lpht, bucket);
+    } else {
         return NULL;
     }
 
@@ -292,8 +299,11 @@ oha_tpht_set_timeout_slot_int(struct oha_tpht * tpht, const void * key, uint8_t 
         return NULL;
     }
 
-    struct oha_tpht_value_bucket * hash_table_value = oha_lpht_look_up_int(tpht->lpht, key);
-    if (hash_table_value == NULL) {
+    struct oha_tpht_value_bucket * hash_table_value = NULL;
+    struct oha_lpht_key_bucket * bucket = oha_lpht_look_up_int(tpht->lpht, key);
+    if (bucket != NULL) {
+        hash_table_value = i_oha_lpht_get_value(tpht->lpht, bucket);
+    } else {
         return NULL;
     }
 

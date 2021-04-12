@@ -47,11 +47,16 @@ struct oha_memory_fp {
 struct oha_lpht;
 
 struct oha_lpht_config {
-    double max_load_factor;
     struct oha_memory_fp memory;
     size_t key_size;
     size_t value_size;
+
+    /*
+     * The maximum number of elements that could placed in the table, this value is lower than the allocated
+     * number of hash table buckets, because of performance reasons. The ratio is configurable via the load factor.
+     */
     uint32_t max_elems;
+    float max_load_factor;
     bool resizable;
 };
 
@@ -59,7 +64,7 @@ struct oha_lpht_status {
     uint32_t max_elems;
     uint32_t elems_in_use;
     size_t size_in_bytes;
-    double current_load_factor;
+    float current_load_factor;
 };
 
 OHA_PUBLIC_API struct oha_lpht *

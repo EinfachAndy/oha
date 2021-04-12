@@ -16,10 +16,31 @@
 #error "unsupported plattform"
 #endif
 
+#define OHA_MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define OMA_MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 #define OHA_ALIGN_UP(_num) (((_num) + ((SIZE_T_WIDTH)-1)) & ~((SIZE_T_WIDTH)-1))
 
 #define OHA_LIKELY(x) __builtin_expect((x), 1)
 #define OHA_UNLIKELY(x) __builtin_expect((x), 0)
+
+#define OHA_SWAP(x, y)                                                                                                 \
+    do {                                                                                                               \
+        static_assert(sizeof(x) == sizeof(y), "swap of different types not supported");                                \
+        unsigned char swap_temp[sizeof(x)];                                                                            \
+        memcpy(swap_temp, &(y), sizeof(x));                                                                            \
+        memcpy(&(y), &(x), sizeof(x));                                                                                 \
+        memcpy(&(x), swap_temp, sizeof(x));                                                                            \
+    } while (0)
+
+__attribute__((always_inline)) static inline void
+i_oha_swap_memory(void * const restrict a, void * const restrict b, const size_t size)
+{
+    char tmp_buffer[size];
+    memcpy(tmp_buffer, a, size); // a -> tmp
+    memcpy(a, b, size);          // b -> a
+    memcpy(b, tmp_buffer, size); // tmp -> b
+}
 
 __attribute__((always_inline)) static inline void *
 oha_move_ptr_num_bytes(const void * const ptr, size_t num_bytes)

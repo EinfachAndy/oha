@@ -79,6 +79,40 @@ test_insert_look_up()
 }
 
 void
+test_double_inserts()
+{
+    struct oha_lpht_config config;
+    memset(&config, 0, sizeof(config));
+    config.max_load_factor = LOAF_FACTOR;
+    config.key_size = sizeof(uint64_t);
+    config.value_size = sizeof(uint64_t);
+    config.max_elems = 10;
+
+    struct oha_lpht * table = oha_lpht_create(&config);
+
+    for (uint64_t i = 0; i < config.max_elems; i++) {
+
+        TEST_ASSERT_NULL(oha_lpht_look_up(table, &i));
+
+        uint64_t * value_insert = oha_lpht_insert(table, &i);
+        TEST_ASSERT_NOT_NULL(value_insert);
+        *value_insert = i;
+
+        uint64_t * double_insert = oha_lpht_insert(table, &i);
+        TEST_ASSERT_NOT_NULL(double_insert);
+        TEST_ASSERT_EQUAL_PTR(value_insert, double_insert);
+        TEST_ASSERT_EQUAL_UINT64(*double_insert, i);
+    }
+
+    for (uint64_t i = 0; i < config.max_elems; i++) {
+        uint64_t * value_lool_up = oha_lpht_look_up(table, &i);
+        TEST_ASSERT_EQUAL_UINT64(*value_lool_up, i);
+    }
+
+    oha_lpht_destroy(table);
+}
+
+void
 test_insert_look_up_remove()
 {
     for (size_t elems = 1; elems < 500; elems++) {
@@ -103,10 +137,14 @@ test_insert_look_up_remove()
         for (uint64_t i = 0; i < elems; i++) {
             for (uint64_t j = 0; j < i; j++) {
                 uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
+                if (value_lool_up != NULL)
+                    fprintf(stderr, "\n## failure: i=%lu j=%lu  elems=%lu\n", i, j, elems);
                 TEST_ASSERT_NULL(value_lool_up);
             }
             for (uint64_t j = i; j < elems; j++) {
                 uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
+                if (value_lool_up == NULL)
+                    fprintf(stderr, "\n## failure: i=%lu j=%lu  elems=%lu\n", i, j, elems);
                 TEST_ASSERT_NOT_NULL(value_lool_up);
             }
             uint64_t * removed_value = oha_lpht_remove(table, &i);
@@ -124,34 +162,31 @@ test_insert_look_up_remove()
 void
 test_insert_look_up_resize()
 {
-    const size_t iterations = 500;
-    for (size_t elems = 1; elems < iterations; elems++) {
+    size_t init_elems = 10;
+    struct oha_lpht_config config;
+    memset(&config, 0, sizeof(config));
+    config.max_load_factor = LOAF_FACTOR;
+    config.key_size = sizeof(uint64_t);
+    config.value_size = sizeof(uint64_t);
+    config.max_elems = init_elems;
+    config.resizable = true;
 
-        struct oha_lpht_config config;
-        memset(&config, 0, sizeof(config));
-        config.max_load_factor = LOAF_FACTOR;
-        config.key_size = sizeof(uint64_t);
-        config.value_size = sizeof(uint64_t);
-        config.max_elems = elems;
-        config.resizable = true;
+    struct oha_lpht * table = oha_lpht_create(&config);
+    TEST_ASSERT_NOT_NULL(table);
 
-        struct oha_lpht * table = oha_lpht_create(&config);
-        TEST_ASSERT_NOT_NULL(table);
-
-        for (uint64_t i = 0; i < iterations; i++) {
-            uint64_t * value_insert = oha_lpht_insert(table, &i);
-            TEST_ASSERT_NOT_NULL(value_insert);
-            *value_insert = i;
-        }
-
-        for (uint64_t j = 0; j < iterations; j++) {
-            uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
-            TEST_ASSERT_NOT_NULL(value_lool_up);
-            TEST_ASSERT_EQUAL_UINT64(*value_lool_up, j);
-        }
-
-        oha_lpht_destroy(table);
+    for (uint64_t i = 0; i < 4 * init_elems; i++) {
+        uint64_t * value_insert = oha_lpht_insert(table, &i);
+        TEST_ASSERT_NOT_NULL(value_insert);
+        *value_insert = i;
     }
+
+    for (uint64_t j = 0; j < 4 * init_elems; j++) {
+        uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
+        TEST_ASSERT_NOT_NULL(value_lool_up);
+        TEST_ASSERT_EQUAL_UINT64(*value_lool_up, j);
+    }
+
+    oha_lpht_destroy(table);
 }
 
 void
@@ -171,7 +206,7 @@ test_resize_stress_test()
     for (uint64_t i = 0; i < 1000 * 1000; i++) {
         uint64_t * value_insert = oha_lpht_insert(table, &i);
         if (value_insert == NULL) {
-            fprintf(stderr, "inserted: %lu\n", i);
+            fprintf(stderr, "insertion of '%lu' failed!\n", i);
         }
         TEST_ASSERT_NOT_NULL(value_insert);
         *value_insert = i;
@@ -260,6 +295,7 @@ main(void)
     RUN_TEST(test_create_destroy);
     RUN_TEST(test_insert_look_up_resize);
     RUN_TEST(test_insert_look_up);
+    RUN_TEST(test_double_inserts);
     RUN_TEST(test_insert_look_up_remove);
     RUN_TEST(test_clear_remove);
     RUN_TEST(test_reserve_elemts);

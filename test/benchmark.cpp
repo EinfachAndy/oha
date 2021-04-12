@@ -83,7 +83,7 @@ main(int argc, char * argv[])
 
     int mode = atoi(argv[2]);
 
-    const struct oha_lpht_config config = {0.5, {0}, sizeof(uint64_t), sizeof(struct value), MAX_ELEMENTS, false};
+    const struct oha_lpht_config config = {{0}, sizeof(uint64_t), sizeof(struct value), MAX_ELEMENTS, 0.5, false};
 
     switch (mode) {
         case 1:
