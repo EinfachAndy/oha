@@ -21,9 +21,6 @@
 
 #define OHA_ALIGN_UP(_num) (((_num) + ((SIZE_T_WIDTH)-1)) & ~((SIZE_T_WIDTH)-1))
 
-#define OHA_LIKELY(x) __builtin_expect((x), 1)
-#define OHA_UNLIKELY(x) __builtin_expect((x), 0)
-
 #define OHA_SWAP(x, y)                                                                                                 \
     do {                                                                                                               \
         static_assert(sizeof(x) == sizeof(y), "swap of different types not supported");                                \

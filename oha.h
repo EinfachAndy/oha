@@ -47,16 +47,15 @@ struct oha_memory_fp {
 struct oha_lpht;
 
 struct oha_lpht_config {
-    struct oha_memory_fp memory;
-    size_t key_size;
-    size_t value_size;
-
     /*
      * The maximum number of elements that could placed in the table, this value is lower than the allocated
      * number of hash table buckets, because of performance reasons. The ratio is configurable via the load factor.
      */
     uint32_t max_elems;
     float max_load_factor;
+    size_t key_size;
+    size_t value_size;
+    struct oha_memory_fp memory;
     bool resizable;
 };
 

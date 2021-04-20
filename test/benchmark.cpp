@@ -22,7 +22,6 @@ using namespace std;
 
 #define MAX_ELEMENTS 250000
 
-
 enum command {
     INVALID,
     INSERT,
@@ -83,7 +82,7 @@ main(int argc, char * argv[])
 
     int mode = atoi(argv[2]);
 
-    const struct oha_lpht_config config = {{0}, sizeof(uint64_t), sizeof(struct value), MAX_ELEMENTS, 0.5, false};
+    const struct oha_lpht_config config = {MAX_ELEMENTS, 0.5, sizeof(uint64_t), sizeof(struct value), {0}, false};
 
     switch (mode) {
         case 1:
