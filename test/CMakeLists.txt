@@ -29,6 +29,8 @@ if(${BUILD_SHARED_LIB})
 
 endif()
 
+add_unit_test(utils utils.c)
+
 #inline lib test
 add_unit_test(lpht_tests_fast lpht_tests_fast.c)
 

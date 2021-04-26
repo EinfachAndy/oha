@@ -107,6 +107,41 @@ oha_realloc(const struct oha_memory_fp * const memory, void * const ptr, size_t 
     }
 }
 
+/*
+ * fast compution of 2^x
+ * see: https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+ */
+__attribute__((always_inline)) static inline uint32_t
+oha_next_power_of_two_32bit(uint32_t i)
+{
+    --i;
+    i |= i >> 1;
+    i |= i >> 2;
+    i |= i >> 4;
+    i |= i >> 8;
+    i |= i >> 16;
+    ++i;
+    return i;
+}
+
+/*
+ * fast compution of log2(x)
+ * https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers
+ */
+__attribute__((always_inline)) static inline int
+oha_log2_32bit(uint32_t value)
+{
+    static const uint8_t tab32[32] = {0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
+                                      8, 12, 20, 28, 15, 17, 24, 7,  19, 27, 23, 6,  26, 5,  4, 31};
+
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    return tab32[(size_t)(value * 0x07C4ACDD) >> 27];
+}
+
 /**
  * creates a modulo without division
  *  - modulo could takes up to 20 cycles
