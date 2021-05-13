@@ -2,7 +2,7 @@
 #include <time.h>
 #include <unity.h>
 
-#include "oha.h"
+#include "../oha.h"
 
 /* Is run before every test, put unit init calls here. */
 void

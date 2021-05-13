@@ -74,8 +74,6 @@ __attribute__((pure)) OHA_PUBLIC_API void *
 oha_lpht_look_up(const struct oha_lpht * table, const void * key);
 OHA_PUBLIC_API void *
 oha_lpht_insert(struct oha_lpht * table, const void * key);
-__attribute__((pure)) OHA_PUBLIC_API void *
-oha_lpht_get_key_from_value(const void * value);
 OHA_PUBLIC_API void *
 oha_lpht_remove(struct oha_lpht * table, const void * key);
 OHA_PUBLIC_API int

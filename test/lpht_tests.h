@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <string.h>
+#include <unity.h>
+
 // good for testing to create collisions
 #define LOAF_FACTOR 0.9
 
