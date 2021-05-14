@@ -23,14 +23,14 @@
 
 #define OHA_SWAP(x, y)                                                                                                 \
     do {                                                                                                               \
-        static_assert(sizeof(x) == sizeof(y), "swap of different types not supported");                                \
+        _Static_assert(sizeof(x) == sizeof(y), "swap of different types not supported");                               \
         unsigned char swap_temp[sizeof(x)];                                                                            \
         memcpy(swap_temp, &(y), sizeof(x));                                                                            \
         memcpy(&(y), &(x), sizeof(x));                                                                                 \
         memcpy(&(x), swap_temp, sizeof(x));                                                                            \
     } while (0)
 
-__attribute__((always_inline)) static inline void
+OHA_FORCE_INLINE void
 i_oha_swap_memory(void * const restrict a, void * const restrict b, const size_t size)
 {
     char tmp_buffer[size];
@@ -39,13 +39,13 @@ i_oha_swap_memory(void * const restrict a, void * const restrict b, const size_t
     memcpy(b, tmp_buffer, size); // tmp -> b
 }
 
-__attribute__((always_inline)) static inline void *
+OHA_FORCE_INLINE void *
 oha_move_ptr_num_bytes(const void * const ptr, size_t num_bytes)
 {
     return (((uint8_t *)ptr) + num_bytes);
 }
 
-__attribute__((always_inline)) static inline void
+OHA_FORCE_INLINE void
 oha_free(const struct oha_memory_fp * const memory, void * const ptr)
 {
     assert(memory);
@@ -57,7 +57,7 @@ oha_free(const struct oha_memory_fp * const memory, void * const ptr)
     }
 }
 
-__attribute__((always_inline)) static inline void *
+OHA_FORCE_INLINE void *
 oha_calloc(const struct oha_memory_fp * const memory, size_t size)
 {
     assert(memory);
@@ -73,7 +73,7 @@ oha_calloc(const struct oha_memory_fp * const memory, size_t size)
     return ptr;
 }
 
-__attribute__((always_inline)) static inline void *
+OHA_FORCE_INLINE void *
 oha_malloc(const struct oha_memory_fp * const memory, size_t size)
 {
     assert(memory);
@@ -86,7 +86,7 @@ oha_malloc(const struct oha_memory_fp * const memory, size_t size)
     return ptr;
 }
 
-__attribute__((always_inline)) static inline void *
+OHA_FORCE_INLINE void *
 oha_realloc(const struct oha_memory_fp * const memory, void * const ptr, size_t size)
 {
     assert(memory);
@@ -111,7 +111,7 @@ oha_realloc(const struct oha_memory_fp * const memory, void * const ptr, size_t 
  * fast compution of 2^x
  * see: https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
  */
-__attribute__((always_inline)) static inline uint32_t
+OHA_FORCE_INLINE uint32_t
 oha_next_power_of_two_32bit(uint32_t i)
 {
     --i;
@@ -128,7 +128,7 @@ oha_next_power_of_two_32bit(uint32_t i)
  * fast compution of log2(x)
  * https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers
  */
-__attribute__((always_inline)) static inline int
+OHA_FORCE_INLINE int
 oha_log2_32bit(uint32_t value)
 {
     static const uint8_t tab32[32] = {0, 9,  1,  10, 13, 21, 2,  29, 11, 14, 16, 18, 22, 25, 3, 30,
@@ -142,18 +142,30 @@ oha_log2_32bit(uint32_t value)
     return tab32[(size_t)(value * 0x07C4ACDD) >> 27];
 }
 
+OHA_FORCE_INLINE uint32_t
+oha_lpht_hash_32bit(const void * buffer, const size_t len)
+{
+    const uint32_t * b = buffer;
+    uint32_t res = 2147483647; // magic prime
+    uint32_t l = len >> 2;     // key must be at least 4 byte
+    for (uint32_t i = 0; i < l; i++) {
+        res += *b++;
+    }
+    return res;
+}
+
 /**
  * creates a modulo without division
  *  - modulo could takes up to 20 cycles
  *  - multiplication takes about 3 cycles
  */
-__attribute__((always_inline)) static inline uint32_t
+OHA_FORCE_INLINE uint32_t
 oha_map_range_u32(uint32_t word, uint32_t p)
 {
     return (uint32_t)(((uint64_t)word * (uint64_t)p) >> 32);
 }
 
-__attribute__((always_inline)) static inline bool
+OHA_FORCE_INLINE bool
 oha_add_entry_to_array(const struct oha_memory_fp * const memory,
                        void ** const array,
                        size_t entry_size,
@@ -182,7 +194,7 @@ oha_add_entry_to_array(const struct oha_memory_fp * const memory,
     return false;
 }
 
-__attribute__((always_inline)) static inline bool
+OHA_FORCE_INLINE bool
 oha_remove_entry_from_array(const struct oha_memory_fp * const memory,
                             void ** const array,
                             size_t entry_size,

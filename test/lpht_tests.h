@@ -16,6 +16,46 @@ tearDown(void)
 {
 }
 
+// fake some memory wrapper stuff
+#define MEMORY_SIZE_OFFSET (sizeof(void *) * 7)
+
+static inline void *
+get_origin_ptr(void * user_memory_ptr)
+{
+    TEST_ASSERT(user_memory_ptr);
+
+    return ((uint8_t *)user_memory_ptr) - MEMORY_SIZE_OFFSET;
+}
+
+static inline void *
+get_user_memory_ptr(void * origin_ptr)
+{
+    TEST_ASSERT(origin_ptr);
+
+    return ((uint8_t *)origin_ptr) + MEMORY_SIZE_OFFSET;
+}
+
+static void *
+malloc_wrapper_oha(size_t size, void * user_ptr)
+{
+    (void)user_ptr;
+    return get_user_memory_ptr(malloc(size + MEMORY_SIZE_OFFSET));
+}
+
+static void
+free_wrapper_oha(void * ptr, void * user_ptr)
+{
+    (void)user_ptr;
+    free(get_origin_ptr(ptr));
+}
+
+static void *
+realloc_wrapper_oha(void * ptr, size_t size, void * user_ptr)
+{
+    (void)user_ptr;
+    return get_user_memory_ptr(realloc(get_origin_ptr(ptr), size + MEMORY_SIZE_OFFSET));
+}
+
 void
 test_create_destroy()
 {
@@ -25,6 +65,28 @@ test_create_destroy()
     config.key_size = sizeof(uint64_t);
     config.value_size = sizeof(uint64_t);
     config.max_elems = 100;
+
+    struct oha_lpht * table = oha_lpht_create(&config);
+    oha_lpht_destroy(table);
+}
+
+void
+test_create_destroy_alloc_ptr()
+{
+    struct oha_memory_fp memory = {
+        .malloc = malloc_wrapper_oha,
+        .realloc = realloc_wrapper_oha,
+        .free = free_wrapper_oha,
+        .alloc_user_ptr = (void *)-1,
+    };
+
+    struct oha_lpht_config config;
+    memset(&config, 0, sizeof(config));
+    config.max_load_factor = LOAF_FACTOR;
+    config.key_size = sizeof(uint64_t);
+    config.value_size = sizeof(uint64_t);
+    config.max_elems = 100;
+    config.memory = memory;
 
     struct oha_lpht * table = oha_lpht_create(&config);
     oha_lpht_destroy(table);
@@ -196,6 +258,13 @@ test_insert_look_up_resize()
 void
 test_resize_stress_test()
 {
+    struct oha_memory_fp memory = {
+        .malloc = malloc_wrapper_oha,
+        .realloc = realloc_wrapper_oha,
+        .free = free_wrapper_oha,
+        .alloc_user_ptr = (void *)-1,
+    };
+
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
     config.max_load_factor = 0.6;
@@ -203,6 +272,7 @@ test_resize_stress_test()
     config.value_size = sizeof(uint64_t);
     config.max_elems = 1;
     config.resizable = true;
+    config.memory = memory;
 
     struct oha_lpht * table = oha_lpht_create(&config);
     TEST_ASSERT_NOT_NULL(table);

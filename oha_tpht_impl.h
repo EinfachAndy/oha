@@ -36,10 +36,10 @@ struct oha_tpht_value_bucket {
     uint8_t data[];
 };
 
-OHA_PUBLIC_API void
+OHA_FORCE_INLINE void
 oha_tpht_destroy_int(struct oha_tpht * const tpht);
 
-__attribute__((always_inline)) static inline void
+OHA_FORCE_INLINE void
 i_oha_tpht_connect_heap_with_hash_table(struct oha_tpht_value_bucket * hash_table_value,
                                         void * heap_value,
                                         const void * const origin_key,
@@ -56,7 +56,7 @@ i_oha_tpht_connect_heap_with_hash_table(struct oha_tpht_value_bucket * hash_tabl
  * public functions
  */
 
-OHA_PUBLIC_API struct oha_tpht *
+OHA_FORCE_INLINE struct oha_tpht *
 oha_tpht_create_int(const struct oha_tpht_config * const config)
 {
     assert(config);
@@ -77,7 +77,7 @@ oha_tpht_create_int(const struct oha_tpht_config * const config)
     return table;
 }
 
-OHA_PUBLIC_API int8_t
+OHA_FORCE_INLINE int8_t
 oha_tpht_add_timeout_slot_int(struct oha_tpht * const tpht, int64_t timeout, uint32_t num_elements, bool resizable)
 {
     assert(tpht);
@@ -116,7 +116,7 @@ oha_tpht_add_timeout_slot_int(struct oha_tpht * const tpht, int64_t timeout, uin
     return tpht->num_timeout_slots;
 }
 
-OHA_PUBLIC_API void
+OHA_FORCE_INLINE void
 oha_tpht_destroy_int(struct oha_tpht * const tpht)
 {
     assert(tpht);
@@ -133,7 +133,7 @@ oha_tpht_destroy_int(struct oha_tpht * const tpht)
     oha_free(&tpht->lpht_config.memory, tpht);
 }
 
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_tpht_increase_global_time_int(struct oha_tpht * const tpht, int64_t timestamp)
 {
     assert(tpht);
@@ -144,7 +144,7 @@ oha_tpht_increase_global_time_int(struct oha_tpht * const tpht, int64_t timestam
     return 0;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_tpht_insert_int(struct oha_tpht * const tpht, const void * const key, uint8_t timeout_slot_id)
 {
     assert(tpht);
@@ -175,7 +175,7 @@ oha_tpht_insert_int(struct oha_tpht * const tpht, const void * const key, uint8_
     return hash_table_value->data;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_tpht_look_up_int(const struct oha_tpht * const tpht, const void * const key)
 {
     assert(tpht);
@@ -192,7 +192,7 @@ oha_tpht_look_up_int(const struct oha_tpht * const tpht, const void * const key)
     return value->data;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_tpht_remove_int(struct oha_tpht * const tpht, const void * const key)
 {
 
@@ -219,7 +219,7 @@ oha_tpht_remove_int(struct oha_tpht * const tpht, const void * const key)
     return value->data;
 }
 
-OHA_PUBLIC_API size_t
+OHA_FORCE_INLINE size_t
 oha_tpht_next_timeout_entries_int(struct oha_tpht * const tpht,
                                   struct oha_key_value_pair * const next_pair,
                                   size_t num_pairs)
@@ -258,7 +258,7 @@ oha_tpht_next_timeout_entries_int(struct oha_tpht * const tpht,
     return num_found_entries;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_tpht_update_time_for_entry_int(struct oha_tpht * const tpht, const void * const key, int64_t new_timestamp)
 {
 
@@ -289,7 +289,7 @@ oha_tpht_update_time_for_entry_int(struct oha_tpht * const tpht, const void * co
     return NULL;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_tpht_set_timeout_slot_int(struct oha_tpht * tpht, const void * key, uint8_t new_slot)
 {
     assert(tpht);

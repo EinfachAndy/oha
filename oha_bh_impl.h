@@ -28,7 +28,7 @@ struct oha_bh {
     struct oha_bh_key_bucket * keys;
 };
 
-static inline struct oha_bh_value_bucket *
+OHA_FORCE_INLINE struct oha_bh_value_bucket *
 i_oha_bh_get_value_bucket(void * value)
 {
     struct oha_bh_value_bucket * value_bucket =
@@ -37,25 +37,25 @@ i_oha_bh_get_value_bucket(void * value)
     return value_bucket;
 }
 
-__attribute__((always_inline)) static inline uint_fast32_t
+OHA_FORCE_INLINE uint_fast32_t
 i_oha_bh_parent(uint_fast32_t i)
 {
     return (i - 1) / 2;
 }
 
-__attribute__((always_inline)) static inline uint_fast32_t
+OHA_FORCE_INLINE uint_fast32_t
 i_oha_bh_left(uint_fast32_t i)
 {
     return (2 * i + 1);
 }
 
-__attribute__((always_inline)) static inline uint_fast32_t
+OHA_FORCE_INLINE uint_fast32_t
 i_oha_bh_right(uint_fast32_t i)
 {
     return (2 * i + 2);
 }
 
-__attribute__((always_inline)) static inline void
+OHA_FORCE_INLINE void
 i_oha_bh_swap_keys(struct oha_bh_key_bucket * const restrict a, struct oha_bh_key_bucket * const restrict b)
 {
     a->value->key = b;
@@ -65,7 +65,7 @@ i_oha_bh_swap_keys(struct oha_bh_key_bucket * const restrict a, struct oha_bh_ke
     *b = tmp_a;
 }
 
-__attribute__((always_inline)) static inline void
+OHA_FORCE_INLINE void
 i_oha_bh_connect_keys_values(struct oha_bh * const heap)
 {
     // connect keys and values
@@ -77,7 +77,7 @@ i_oha_bh_connect_keys_values(struct oha_bh * const heap)
     }
 }
 
-__attribute__((always_inline)) static inline bool
+OHA_FORCE_INLINE bool
 i_oha_bh_resize_heap(struct oha_bh * const heap)
 {
     if (!heap->config.resizable) {
@@ -122,7 +122,7 @@ i_oha_bh_resize_heap(struct oha_bh * const heap)
     return true;
 }
 
-static void
+OHA_PRIVATE_API void
 i_oha_bh_heapify(struct oha_bh * const heap, uint_fast32_t i)
 {
     uint_fast32_t l = i_oha_bh_left(i);
@@ -143,7 +143,7 @@ i_oha_bh_heapify(struct oha_bh * const heap, uint_fast32_t i)
  * public functions
  */
 
-OHA_PUBLIC_API void
+OHA_FORCE_INLINE void
 oha_bh_destroy_int(struct oha_bh * const heap)
 {
     assert(heap);
@@ -154,7 +154,7 @@ oha_bh_destroy_int(struct oha_bh * const heap)
     oha_free(memory, heap);
 }
 
-OHA_PUBLIC_API struct oha_bh *
+OHA_FORCE_INLINE struct oha_bh *
 oha_bh_create_int(const struct oha_bh_config * const config)
 {
     assert(config);
@@ -186,7 +186,7 @@ oha_bh_create_int(const struct oha_bh_config * const config)
     return heap;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_bh_insert_int(struct oha_bh * const heap, int64_t key)
 {
     assert(heap);
@@ -211,7 +211,7 @@ oha_bh_insert_int(struct oha_bh * const heap, int64_t key)
     return heap->keys[i].value->value_buffer;
 }
 
-OHA_PUBLIC_API int64_t
+OHA_FORCE_INLINE int64_t
 oha_bh_find_min_int(const struct oha_bh * const heap)
 {
     assert(heap);
@@ -223,7 +223,7 @@ oha_bh_find_min_int(const struct oha_bh * const heap)
     return heap->keys[0].key;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_bh_delete_min_int(struct oha_bh * const heap)
 {
     assert(heap);
@@ -244,7 +244,7 @@ oha_bh_delete_min_int(struct oha_bh * const heap)
     return heap->keys[heap->elems].value->value_buffer;
 }
 
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_bh_remove_int(struct oha_bh * const heap, void * const value, int64_t * out_key)
 {
     assert(heap);
@@ -270,7 +270,7 @@ oha_bh_remove_int(struct oha_bh * const heap, void * const value, int64_t * out_
     return value_bucket->value_buffer;
 }
 
-OHA_PUBLIC_API int64_t
+OHA_FORCE_INLINE int64_t
 oha_bh_change_key_int(struct oha_bh * const heap, void * const value, int64_t new_val)
 {
     assert(heap);
