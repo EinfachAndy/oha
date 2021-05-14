@@ -32,21 +32,27 @@ struct oha_lpht {
     struct oha_lpht_key_bucket * last_key_bucket;
     size_t key_bucket_size;   // size in bytes of one whole hash table key bucket, memory aligned
     size_t value_bucket_size; // size in bytes of one whole hash table value bucket, memory aligned
-    uint32_t max_indicies;    // number of all allocated hash table buckets
     uint32_t elems;           // current number of inserted elements
+
+    /*
+     * max_indicies = indicies_pow_of_2_minus_1 + _2_log_left_over
+     */
+    uint32_t indicies_pow_of_2_minus_1; // number of elements in the array which will used as fast indexing
+    uint32_t max_indicies;              // number of the whole array size also including the left over elements
+    uint8_t _2_log_left_over;           // number of additional elements to avoid array bound checks
     struct oha_lpht_config config;
 };
 
-OHA_PUBLIC_API void
+OHA_FORCE_INLINE void
 oha_lpht_destroy_int(struct oha_lpht * const table);
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_lpht_insert_int(struct oha_lpht * const table, const void * const key);
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_lpht_iter_init_int(struct oha_lpht * const table);
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair);
 
-__attribute__((always_inline)) static inline void
+OHA_FORCE_INLINE void
 i_oha_lpht_clean_up(struct oha_lpht * const table)
 {
     assert(table);
@@ -57,43 +63,38 @@ i_oha_lpht_clean_up(struct oha_lpht * const table)
     memset(table, 0, sizeof(*table));
 }
 
-__attribute__((always_inline)) static inline bool
+OHA_FORCE_INLINE bool
 i_oha_lpht_is_occupied(const struct oha_lpht_key_bucket * const bucket)
 {
     return bucket->psl >= 0;
 }
 
-__attribute__((always_inline)) static inline void *
+OHA_FORCE_INLINE void *
 i_oha_lpht_get_value(const struct oha_lpht * const table, const struct oha_lpht_key_bucket * const bucket)
 {
     return oha_move_ptr_num_bytes(table->value_buckets, table->value_bucket_size * bucket->value_bucket_number);
 }
 
-__attribute__((always_inline)) static inline uint32_t
+OHA_FORCE_INLINE uint32_t
 i_oha_lpht_hash_key(const struct oha_lpht * const table, const void * const key)
 {
-    return XXH3_64bits(key, table->config.key_size);
+    return oha_lpht_hash_32bit(key, table->config.key_size);
 }
 
-__attribute__((always_inline)) static inline struct oha_lpht_key_bucket *
+OHA_FORCE_INLINE struct oha_lpht_key_bucket *
 i_oha_lpht_get_start_bucket(const struct oha_lpht * const table, uint32_t hash)
 {
-    size_t index = oha_map_range_u32(hash, table->max_indicies);
+    size_t index = hash & table->indicies_pow_of_2_minus_1;
     return oha_move_ptr_num_bytes(table->key_buckets, table->key_bucket_size * index);
 }
 
-__attribute__((always_inline)) static inline struct oha_lpht_key_bucket *
+OHA_FORCE_INLINE struct oha_lpht_key_bucket *
 i_oha_lpht_get_next_bucket(const struct oha_lpht * const table, const struct oha_lpht_key_bucket * const bucket)
 {
-    struct oha_lpht_key_bucket * current = oha_move_ptr_num_bytes(bucket, table->key_bucket_size);
-    // overflow, get to the first elem
-    if (current > table->last_key_bucket) {
-        current = table->key_buckets;
-    }
-    return current;
+    return oha_move_ptr_num_bytes(bucket, table->key_bucket_size);
 }
 
-__attribute__((always_inline)) static inline int
+OHA_FORCE_INLINE int
 i_oha_lpht_init_table(struct oha_lpht * const table)
 {
     // TODO support zero value size as hash set
@@ -102,24 +103,34 @@ i_oha_lpht_init_table(struct oha_lpht * const table)
         return -1;
     }
 
-    if (table->config.key_size == 0) {
+    if (table->config.key_size < 4) {
         return -2;
     }
 
-    // TODO add overflow checks
-    table->max_indicies = ceil((1.0F / table->config.max_load_factor) * (float)table->config.max_elems) + 1.0F;
+    /*
+     * 1. calculate storage and config values
+     */
+    table->config.max_load_factor = table->config.max_load_factor(0.5, table->config.max_load_factor);
+    const uint32_t needed_elems =
+        OHA_MAX(ceil((1.0F / table->config.max_load_factor) * (float)table->config.max_elems), 2);
+    const uint32_t next_pow_of_2 = oha_next_power_of_two_32bit(needed_elems);
+    table->_2_log_left_over = 2 * oha_log2_32bit(next_pow_of_2);
+    table->indicies_pow_of_2_minus_1 = next_pow_of_2 - 1;
+    table->max_indicies = table->indicies_pow_of_2_minus_1 + table->_2_log_left_over;
     table->value_bucket_size = OHA_ALIGN_UP(table->config.value_size);
     table->key_bucket_size = OHA_ALIGN_UP(sizeof(struct oha_lpht_key_bucket) + table->config.key_size);
 
-    // allocate memory
+    /*
+     * 2. allocate needed memory
+     */
     const struct oha_memory_fp * memory = &table->config.memory;
-    table->key_buckets = oha_malloc(memory, table->key_bucket_size * table->max_indicies);
+    table->key_buckets = oha_malloc(memory, table->key_bucket_size * (table->max_indicies));
     if (table->key_buckets == NULL) {
         i_oha_lpht_clean_up(table);
         return -3;
     }
 
-    table->value_buckets = oha_malloc(memory, table->value_bucket_size * table->max_indicies);
+    table->value_buckets = oha_malloc(memory, table->value_bucket_size * (table->max_indicies));
     if (table->value_buckets == NULL) {
         i_oha_lpht_clean_up(table);
         return -4;
@@ -129,7 +140,9 @@ i_oha_lpht_init_table(struct oha_lpht * const table)
         oha_move_ptr_num_bytes(table->key_buckets, table->key_bucket_size * (table->max_indicies - 1));
     table->iter = NULL;
 
-    // connect hash buckets and value buckets
+    /*
+     * 3. connect key buckets and value buckets of both arrays
+     */
     struct oha_lpht_key_bucket * current_key_bucket = table->key_buckets;
     void * current_value_bucket = table->value_buckets;
     for (size_t i = 0; i < table->max_indicies; i++) {
@@ -142,7 +155,7 @@ i_oha_lpht_init_table(struct oha_lpht * const table)
     return 0;
 }
 
-__attribute__((always_inline)) static inline int
+OHA_PRIVATE_API int
 i_oha_lpht_resize(struct oha_lpht * const table, size_t max_elements)
 {
     if (!table->config.resizable) {
@@ -188,13 +201,13 @@ i_oha_lpht_resize(struct oha_lpht * const table, size_t max_elements)
     return 0;
 }
 
-__attribute__((always_inline)) static inline int
+OHA_FORCE_INLINE int
 i_oha_lpht_grow(struct oha_lpht * const table)
 {
     return i_oha_lpht_resize(table, 2 * table->config.max_elems);
 }
 
-__attribute__((always_inline)) static inline void *
+OHA_PRIVATE_API void *
 i_oha_lpht_robin_hood_emplace(struct oha_lpht * const table,
                               void const * const key,
                               int32_t psl,
@@ -227,7 +240,15 @@ i_oha_lpht_robin_hood_emplace(struct oha_lpht * const table,
 
     for (++psl, iter = i_oha_lpht_get_next_bucket(table, iter);;
          ++psl, iter = i_oha_lpht_get_next_bucket(table, iter)) {
-        if (!i_oha_lpht_is_occupied(iter)) {
+        if (psl > table->_2_log_left_over) {
+            // we need to resize the table, otherwise
+            // the key can be placed in not allocated memory
+            if (i_oha_lpht_grow(table) != 0) {
+                return NULL;
+            }
+            // try again
+            return oha_lpht_insert_int(table, key);
+        } else if (!i_oha_lpht_is_occupied(iter)) {
             // terminate robin hood insertion, we found a empty bucket
             iter->psl = psl;
             memcpy(iter->key_buffer, tmp_key_bucket->key_buffer, table->config.key_size);
@@ -244,7 +265,7 @@ i_oha_lpht_robin_hood_emplace(struct oha_lpht * const table,
     }
 }
 
-OHA_PUBLIC_API void
+OHA_FORCE_INLINE void
 oha_lpht_destroy_int(struct oha_lpht * const table)
 {
     assert(table);
@@ -254,7 +275,7 @@ oha_lpht_destroy_int(struct oha_lpht * const table)
     oha_free(memory, table);
 }
 
-OHA_PUBLIC_API struct oha_lpht *
+OHA_FORCE_INLINE struct oha_lpht *
 oha_lpht_create_int(const struct oha_lpht_config * const config)
 {
     assert(config);
@@ -272,7 +293,7 @@ oha_lpht_create_int(const struct oha_lpht_config * const config)
 }
 
 // return pointer to value
-OHA_PUBLIC_API struct oha_lpht_key_bucket *
+OHA_FORCE_INLINE struct oha_lpht_key_bucket *
 oha_lpht_look_up_int(const struct oha_lpht * const table, const void * const key)
 {
     assert(table);
@@ -291,7 +312,7 @@ oha_lpht_look_up_int(const struct oha_lpht * const table, const void * const key
 }
 
 // return pointer to value
-OHA_PUBLIC_API void *
+OHA_PRIVATE_API void *
 oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
 {
     assert(table);
@@ -317,7 +338,7 @@ oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
     return i_oha_lpht_robin_hood_emplace(table, key, psl, iter);
 }
 
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_lpht_reserve_int(struct oha_lpht * const table, size_t elements)
 {
     assert(table);
@@ -330,7 +351,7 @@ oha_lpht_reserve_int(struct oha_lpht * const table, size_t elements)
     return retval;
 }
 
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_lpht_iter_init_int(struct oha_lpht * const table)
 {
     assert(table);
@@ -339,7 +360,7 @@ oha_lpht_iter_init_int(struct oha_lpht * const table)
     return 0;
 }
 
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair * const pair)
 {
     assert(table);
@@ -368,7 +389,7 @@ oha_lpht_iter_next_int(struct oha_lpht * const table, struct oha_key_value_pair 
 }
 
 // return true if element was in the table
-OHA_PUBLIC_API void *
+OHA_FORCE_INLINE void *
 oha_lpht_remove_int(struct oha_lpht * const table, const void * const key)
 {
     assert(table && key);
@@ -401,7 +422,7 @@ oha_lpht_remove_int(struct oha_lpht * const table, const void * const key)
     return oha_move_ptr_num_bytes(table->value_buckets, table->value_bucket_size * value_bucket_index);
 }
 
-OHA_PUBLIC_API int
+OHA_FORCE_INLINE int
 oha_lpht_get_status_int(const struct oha_lpht * const table, struct oha_lpht_status * const status)
 {
     assert(table && status);
@@ -410,12 +431,12 @@ oha_lpht_get_status_int(const struct oha_lpht * const table, struct oha_lpht_sta
     status->elems_in_use = table->elems;
     status->size_in_bytes =
         // key buckets
-        table->key_bucket_size * table->max_indicies +
+        table->key_bucket_size * (table->max_indicies) +
         // value buckets
-        table->value_bucket_size * table->max_indicies +
+        table->value_bucket_size * (table->max_indicies) +
         // table offset size
         sizeof(struct oha_lpht);
-    status->current_load_factor = (float)table->elems / (float)table->max_indicies;
+    status->current_load_factor = (float)table->elems / (float)(table->max_indicies);
     return 0;
 }
 

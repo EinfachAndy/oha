@@ -10,8 +10,11 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+#define OHA_FORCE_INLINE __attribute__((always_inline)) __attribute__((unused)) static inline
+#define OHA_PRIVATE_API __attribute__((unused)) static
+
 #ifdef OHA_INLINE_ALL
-#define OHA_PUBLIC_API static inline __attribute__((unused))
+#define OHA_PUBLIC_API OHA_FORCE_INLINE
 #else
 #define OHA_PUBLIC_API
 #endif
