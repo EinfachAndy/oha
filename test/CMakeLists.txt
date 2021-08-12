@@ -32,7 +32,8 @@ endif()
 add_unit_test(utils utils.c)
 
 #inline lib test
-add_unit_test(lpht_tests_fast lpht_tests_ho.c)
+add_unit_test(lpht_tests_header_only lpht_tests_ho.c)
+add_unit_test(lpht_tests_header_only2 lpht_tests_ho2.c)
 
 # static lib test
 add_unit_test(lpht_tests_static lpht_tests.c)

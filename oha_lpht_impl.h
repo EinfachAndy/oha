@@ -17,7 +17,6 @@
 
 struct oha_lpht_key_bucket {
     uint32_t value_bucket_number;
-    // TODO shrink psl size and introduce a index for the value buckets
     int32_t psl; // probe sequence length
     // key buffer is always aligned on 32 bit and 64 bit architectures
     uint8_t key_buffer[];
@@ -33,11 +32,11 @@ struct oha_lpht {
     uint32_t elems;           // current number of inserted elements
 
     /*
-     * max_indicies = indicies_pow_of_2_minus_1 + _2_log_left_over
+     * max_indicies = indicies_pow_of_2_minus_1 + log2_of_indicies
      */
     uint32_t indicies_pow_of_2_minus_1; // number of elements in the array which will used as fast indexing
     uint32_t max_indicies;              // number of the whole array size also including the left over elements
-    uint8_t _2_log_left_over;           // number of additional elements to avoid array bound checks
+    uint8_t log2_of_indicies;           // number of additional elements to avoid array bound checks
     struct oha_lpht_config config;
 };
 
@@ -88,7 +87,16 @@ i_oha_lpht_get_start_bucket(const struct oha_lpht * const table, uint32_t hash)
 OHA_FORCE_INLINE struct oha_lpht_key_bucket *
 i_oha_lpht_get_next_bucket(const struct oha_lpht * const table, const struct oha_lpht_key_bucket * const bucket)
 {
+#if OHA_MAX_LOG_N_PROBING
     return oha_move_ptr_num_bytes(bucket, table->key_bucket_size);
+#else
+    struct oha_lpht_key_bucket * current = oha_move_ptr_num_bytes(bucket, table->key_bucket_size);
+    // overflow, get to the first elem
+    if (current > table->last_key_bucket) {
+        current = table->key_buckets;
+    }
+    return current;
+#endif
 }
 
 OHA_FORCE_INLINE int
@@ -111,9 +119,13 @@ i_oha_lpht_init_table(struct oha_lpht * const table)
     const uint32_t needed_elems =
         OHA_MAX(ceil((1.0F / table->config.max_load_factor) * (float)table->config.max_elems), 2);
     const uint32_t next_pow_of_2 = oha_next_power_of_two_32bit(needed_elems);
-    table->_2_log_left_over = 2 * oha_log2_32bit(next_pow_of_2);
+#if OHA_MAX_LOG_N_PROBING
+    table->log2_of_indicies = OHA_MAX(oha_log2_32bit(next_pow_of_2), 4);
+#else
+    table->log2_of_indicies = 1; // we perform the bound check, now: max_indicies = indicies_pow_of_2_minus_1 + 1
+#endif
     table->indicies_pow_of_2_minus_1 = next_pow_of_2 - 1;
-    table->max_indicies = table->indicies_pow_of_2_minus_1 + table->_2_log_left_over;
+    table->max_indicies = table->indicies_pow_of_2_minus_1 + table->log2_of_indicies;
     table->value_bucket_size = OHA_ALIGN_UP(table->config.value_size);
     table->key_bucket_size = OHA_ALIGN_UP(sizeof(struct oha_lpht_key_bucket) + table->config.key_size);
 
@@ -241,15 +253,7 @@ i_oha_lpht_robin_hood_emplace(struct oha_lpht * const table,
 
     for (++psl, iter = i_oha_lpht_get_next_bucket(table, iter);;
          ++psl, iter = i_oha_lpht_get_next_bucket(table, iter)) {
-        if (psl > table->_2_log_left_over) {
-            // we need to resize the table, otherwise
-            // the key can be placed in not allocated memory
-            if (i_oha_lpht_grow(table) != 0) {
-                return NULL;
-            }
-            // try again
-            return oha_lpht_insert_int(table, key);
-        } else if (!i_oha_lpht_is_occupied(iter)) {
+        if (!i_oha_lpht_is_occupied(iter)) {
             // terminate robin hood insertion, we found a empty bucket
             iter->psl = psl;
             memcpy(iter->key_buffer, tmp_key_bucket->key_buffer, table->config.key_size);
@@ -263,6 +267,17 @@ i_oha_lpht_robin_hood_emplace(struct oha_lpht * const table,
             OHA_SWAP(iter->psl, psl);
             OHA_SWAP(tmp_key_bucket->value_bucket_number, iter->value_bucket_number);
         }
+#if OHA_MAX_LOG_N_PROBING
+        else if (psl > table->log2_of_indicies) {
+            // we need to resize the table, otherwise
+            // the key can be placed in not allocated memory
+            if (i_oha_lpht_grow(table) != 0) {
+                return NULL;
+            }
+            // try again
+            return oha_lpht_insert_int(table, key);
+        }
+#endif
     }
 }
 
