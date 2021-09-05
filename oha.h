@@ -82,7 +82,7 @@ oha_lpht_remove(struct oha_lpht * table, const void * key);
 OHA_PUBLIC_API int
 oha_lpht_get_status(const struct oha_lpht * table, struct oha_lpht_status * status);
 OHA_PUBLIC_API int
-oha_lpht_reserve(struct oha_lpht * table, size_t elements);
+oha_lpht_reserve(struct oha_lpht * table, uint32_t elements);
 OHA_PUBLIC_API int
 oha_lpht_iter_init(struct oha_lpht * table);
 OHA_PUBLIC_API int

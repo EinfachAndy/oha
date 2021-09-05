@@ -169,7 +169,7 @@ i_oha_lpht_init_table(struct oha_lpht * const table)
 }
 
 OHA_PRIVATE_API int
-i_oha_lpht_resize(struct oha_lpht * const table, size_t max_elements)
+i_oha_lpht_resize(struct oha_lpht * const table, uint32_t max_elements)
 {
     if (!table->config.resizable) {
         return -1;
@@ -355,7 +355,7 @@ oha_lpht_insert_int(struct oha_lpht * const table, const void * const key)
 }
 
 OHA_FORCE_INLINE int
-oha_lpht_reserve_int(struct oha_lpht * const table, size_t elements)
+oha_lpht_reserve_int(struct oha_lpht * const table, uint32_t elements)
 {
     assert(table);
 
@@ -514,7 +514,7 @@ oha_lpht_insert(struct oha_lpht * const table, const void * const key)
 }
 
 OHA_PUBLIC_API int
-oha_lpht_reserve(struct oha_lpht * const table, size_t elements)
+oha_lpht_reserve(struct oha_lpht * const table, uint32_t elements)
 {
 #if OHA_NULL_POINTER_CHECKS
     if (table == NULL) {
