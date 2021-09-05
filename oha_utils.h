@@ -30,6 +30,17 @@
         memcpy(&(x), swap_temp, sizeof(x));                                                                            \
     } while (0)
 
+struct oha_buffer {
+    uint8_t * data;
+    uint32_t elems;
+    uint32_t max_elems;
+};
+
+struct oha_memory_pool {
+    struct oha_buffer * buffers;
+    uint32_t elems;
+};
+
 OHA_FORCE_INLINE void
 i_oha_swap_memory(void * const restrict a, void * const restrict b, const size_t size)
 {

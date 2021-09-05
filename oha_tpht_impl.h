@@ -154,7 +154,7 @@ oha_tpht_insert_int(struct oha_tpht * const tpht, const void * const key, uint8_
         return NULL;
     }
 
-    struct oha_tpht_value_bucket * hash_table_value = oha_lpht_insert_int(tpht->lpht, key);
+    struct oha_tpht_value_bucket * hash_table_value = oha_lpht_insert(tpht->lpht, key);
     if (hash_table_value == NULL) {
         return NULL;
     }

@@ -203,14 +203,16 @@ test_insert_look_up_remove()
         for (uint64_t i = 0; i < elems; i++) {
             for (uint64_t j = 0; j < i; j++) {
                 uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
-                if (value_lool_up != NULL)
+                if (value_lool_up != NULL) {
                     fprintf(stderr, "\n## failure: i=%lu j=%lu  elems=%lu\n", i, j, elems);
+                }
                 TEST_ASSERT_NULL(value_lool_up);
             }
             for (uint64_t j = i; j < elems; j++) {
                 uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
-                if (value_lool_up == NULL)
+                if (value_lool_up == NULL) {
                     fprintf(stderr, "\n## failure: i=%lu j=%lu  elems=%lu\n", i, j, elems);
+                }
                 TEST_ASSERT_NOT_NULL(value_lool_up);
             }
             uint64_t * removed_value = oha_lpht_remove(table, &i);
@@ -228,28 +230,38 @@ test_insert_look_up_remove()
 void
 test_insert_look_up_resize()
 {
-    size_t init_elems = 10;
+    size_t init_elems = 1;
+    const size_t resizes = pow(2, 6);
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
     config.max_load_factor = LOAF_FACTOR;
     config.key_size = sizeof(uint64_t);
-    config.value_size = sizeof(uint64_t);
+    config.value_size = sizeof(void *);
     config.max_elems = init_elems;
     config.resizable = true;
 
     struct oha_lpht * table = oha_lpht_create(&config);
     TEST_ASSERT_NOT_NULL(table);
 
-    for (uint64_t i = 0; i < 4 * init_elems; i++) {
-        uint64_t * value_insert = oha_lpht_insert(table, &i);
+    for (uint64_t i = 0; i < resizes; i++) {
+        void ** value_insert = oha_lpht_insert(table, &i);
         TEST_ASSERT_NOT_NULL(value_insert);
-        *value_insert = i;
+        *value_insert = value_insert;
+
+        for (uint64_t j = 0; j < i; j++) {
+            void ** value_lool_up = oha_lpht_look_up(table, &j);
+            TEST_ASSERT_NOT_NULL(value_lool_up);
+            TEST_ASSERT_EQUAL_PTR(*value_lool_up, value_lool_up);
+        }
+        for (uint64_t j = i + 1; j < resizes; j++) {
+            TEST_ASSERT_NULL(oha_lpht_look_up(table, &j));
+        }
     }
 
-    for (uint64_t j = 0; j < 4 * init_elems; j++) {
-        uint64_t * value_lool_up = oha_lpht_look_up(table, &j);
+    for (uint64_t j = 0; j < resizes; j++) {
+        void ** value_lool_up = oha_lpht_look_up(table, &j);
         TEST_ASSERT_NOT_NULL(value_lool_up);
-        TEST_ASSERT_EQUAL_UINT64(*value_lool_up, j);
+        TEST_ASSERT_EQUAL_PTR(*value_lool_up, value_lool_up);
     }
 
     oha_lpht_destroy(table);
@@ -331,32 +343,38 @@ test_clear_remove()
 }
 
 void
-test_reserve_elemts()
+test_insert_with_resize()
 {
     struct oha_lpht_config config;
     memset(&config, 0, sizeof(config));
     config.max_load_factor = LOAF_FACTOR;
     config.key_size = sizeof(uint64_t);
     config.value_size = sizeof(uint64_t);
-    config.max_elems = 1;
-    config.resizable = false;
+    config.max_elems = 3;
+    config.resizable = true;
 
     struct oha_lpht * table = oha_lpht_create(&config);
     TEST_ASSERT_NOT_NULL(table);
 
-    uint64_t key = 3;
+    uint64_t key = 1;
+    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
+    key = 2;
+    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
+    key = 3;
     TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
 
+    // table is full -> next insert leads to resize
+    key = 4;
+    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
+
+    key = 0;
+    TEST_ASSERT_NULL(oha_lpht_look_up(table, &key));
+    for (uint64_t i = 1; i <= 4; i++) {
+        key = i;
+        TEST_ASSERT_NOT_NULL(oha_lpht_look_up(table, &key));
+    }
     key = 5;
-    TEST_ASSERT_NULL(oha_lpht_insert(table, &key));
-
-    TEST_ASSERT_EQUAL(0, oha_lpht_reserve(table, 3));
-    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
-    key = 7;
-    TEST_ASSERT_NOT_NULL(oha_lpht_insert(table, &key));
-
-    key = 9;
-    TEST_ASSERT_NULL(oha_lpht_insert(table, &key));
+    TEST_ASSERT_NULL(oha_lpht_look_up(table, &key));
 
     oha_lpht_destroy(table);
 }
@@ -367,12 +385,12 @@ main(void)
     UNITY_BEGIN();
 
     RUN_TEST(test_create_destroy);
-    RUN_TEST(test_insert_look_up_resize);
     RUN_TEST(test_insert_look_up);
-    RUN_TEST(test_double_inserts);
     RUN_TEST(test_insert_look_up_remove);
+    RUN_TEST(test_double_inserts);
     RUN_TEST(test_clear_remove);
-    RUN_TEST(test_reserve_elemts);
+    RUN_TEST(test_insert_with_resize);
+    RUN_TEST(test_insert_look_up_resize);
     RUN_TEST(test_resize_stress_test);
 
     return UNITY_END();

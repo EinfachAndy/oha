@@ -3,10 +3,11 @@
 # generated files
 /test/benchmark.out
 
-# eclipse
+# dotfiles and IDE stuff
 /.settings
 /.cproject
 /.project
 /.autotools
 /.pydevproject
 /.clang-format
+/.vscode
