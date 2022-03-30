@@ -39,12 +39,6 @@ add_unit_test(lpht_tests_header_only2 lpht_tests_ho2.c)
 add_unit_test(lpht_tests_static lpht_tests.c)
 target_link_libraries(lpht_tests_static ${LIBNAME}_static)
 
-add_unit_test(tpht_tests_static tpht_tests.c)
-target_link_libraries(tpht_tests_static ${LIBNAME}_static)
-
-add_unit_test(binary_heap_test_static binary_heap_test.c)
-target_link_libraries(binary_heap_test_static ${LIBNAME}_static)
-
 # benchmark
 add_executable(benchmark_static benchmark.cpp)
 target_link_libraries(benchmark_static ${LIBNAME}_static)

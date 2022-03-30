@@ -14,27 +14,6 @@ OHA_0.1.0 {
     oha_lpht_iter_next;
     oha_lpht_reserve;
     
-    # public API bh
-    oha_bh_create;
-    oha_bh_destroy;
-    oha_bh_find_min;
-    oha_bh_delete_min;
-    oha_bh_insert;
-    oha_bh_change_key;
-    oha_bh_remove;
-    
-    # public API tpht
-    oha_tpht_create;
-    oha_tpht_destroy;
-    oha_tpht_increase_global_time;
-    oha_tpht_insert;
-    oha_tpht_look_up;
-    oha_tpht_remove;
-    oha_tpht_add_timeout_slot;
-    oha_tpht_set_timeout_slot;
-    oha_tpht_next_timeout_entries;
-    oha_tpht_update_time_for_entry;
-
   local:
     # Hide all other symbols
     *;

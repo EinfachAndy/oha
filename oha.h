@@ -88,75 +88,9 @@ oha_lpht_iter_init(struct oha_lpht * table);
 OHA_PUBLIC_API int
 oha_lpht_iter_next(struct oha_lpht * table, struct oha_key_value_pair * pair);
 
-/**********************************************************************************************************************
- *  binary heap (bh)
- *
- *      - TODO add docu
- *
- **********************************************************************************************************************/
-struct oha_bh_config {
-    struct oha_memory_fp memory;
-    size_t value_size;
-    uint32_t max_elems;
-    bool resizable;
-};
-#define OHA_BH_NOT_FOUND INT64_MIN
-#define OHA_BH_MIN_VALUE (OHA_BH_NOT_FOUND + 1)
-struct oha_bh;
-
-OHA_PUBLIC_API struct oha_bh *
-oha_bh_create(const struct oha_bh_config * config);
-OHA_PUBLIC_API void
-oha_bh_destroy(struct oha_bh * heap);
-__attribute__((pure)) OHA_PUBLIC_API int64_t
-oha_bh_find_min(const struct oha_bh * heap);
-OHA_PUBLIC_API void *
-oha_bh_delete_min(struct oha_bh * heap);
-OHA_PUBLIC_API void *
-oha_bh_insert(struct oha_bh * heap, int64_t key);
-OHA_PUBLIC_API int64_t
-oha_bh_change_key(struct oha_bh * heap, void * value, int64_t new_val);
-OHA_PUBLIC_API void *
-oha_bh_remove(struct oha_bh * const heap, void * const value, int64_t * out_key);
-
-/**********************************************************************************************************************
- *  tpht (temporal prioritized hash table)
- *
- *      - TODO add docu
- *
- **********************************************************************************************************************/
-struct oha_tpht;
-struct oha_tpht_config {
-    struct oha_lpht_config lpht_config;
-};
-
-OHA_PUBLIC_API struct oha_tpht *
-oha_tpht_create(const struct oha_tpht_config * config);
-OHA_PUBLIC_API void
-oha_tpht_destroy(struct oha_tpht * tpht);
-OHA_PUBLIC_API int
-oha_tpht_increase_global_time(struct oha_tpht * tpht, int64_t timestamp);
-OHA_PUBLIC_API void *
-oha_tpht_insert(struct oha_tpht * tpht, const void * key, uint8_t timeout_slot_id);
-__attribute__((pure)) OHA_PUBLIC_API void *
-oha_tpht_look_up(const struct oha_tpht * tpht, const void * key);
-OHA_PUBLIC_API void *
-oha_tpht_remove(struct oha_tpht * tpht, const void * key);
-OHA_PUBLIC_API int8_t
-oha_tpht_add_timeout_slot(struct oha_tpht * tpht, int64_t timeout, uint32_t num_elements, bool resizable);
-OHA_PUBLIC_API void *
-oha_tpht_set_timeout_slot(struct oha_tpht * tpht, const void * key, uint8_t timeout_slot_id);
-OHA_PUBLIC_API size_t
-oha_tpht_next_timeout_entries(struct oha_tpht * tpht, struct oha_key_value_pair * next_pair, size_t num_pairs);
-OHA_PUBLIC_API void *
-oha_tpht_update_time_for_entry(struct oha_tpht * tpht, const void * key, int64_t new_timestamp);
-
 // include all code as static inline functions
 #ifdef OHA_INLINE_ALL
-// include order must be done in this order!
-#include "oha_bh_impl.h"
 #include "oha_lpht_impl.h"
-#include "oha_tpht_impl.h"
 #endif
 
 #ifdef __cplusplus
